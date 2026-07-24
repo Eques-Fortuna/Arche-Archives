@@ -1,0 +1,189 @@
+@import "tailwindcss";
+
+:root {
+  --color-paper: #FAF6EE;
+  --color-surface: #FFFDF8;
+  --color-panel: #F1E7D6;
+  --color-panel-deep: #E8D9BF;
+
+  --color-ink: #1A1A1A;
+  --color-ink-soft: #3A352F;
+  --color-muted-ink: #5F5A52;
+  --color-subtle-ink: #756F64;
+
+  --color-archive-green: #2A473E;
+  --color-archive-green-dark: #1E342D;
+  --color-archive-green-soft: #DDE7E1;
+
+  --color-antique-gold: #C79A3B;
+  --color-antique-gold-dark: #8A641C;
+  --color-antique-gold-soft: #F3E5BF;
+
+  --color-success: #3F6F5A;
+  --color-success-soft: #DDEADF;
+  --color-warning: #B86B3E;
+  --color-warning-soft: #F1D9C8;
+  --color-danger: #8A2D3B;
+  --color-danger-soft: #F0D5DA;
+  --color-info: #315D73;
+  --color-info-soft: #D7E7EE;
+
+  --color-border: #DED2BE;
+  --color-soft-border: #E9DDC8;
+  --color-strong-border: #B9A98D;
+
+  --color-code-bg: #1E342D;
+  --color-code-text: #F8F1E3;
+  --color-code-muted: #CDBF9F;
+}
+
+@theme {
+  --color-brand-paper: var(--color-paper);
+  --color-brand-surface: var(--color-surface);
+  --color-brand-panel: var(--color-panel);
+  --color-brand-panel-deep: var(--color-panel-deep);
+
+  --color-brand-ink: var(--color-ink);
+  --color-brand-ink-soft: var(--color-ink-soft);
+  --color-brand-muted-ink: var(--color-muted-ink);
+  --color-brand-subtle-ink: var(--color-subtle-ink);
+
+  --color-brand-primary: var(--color-archive-green);
+  --color-brand-primary-deep: var(--color-archive-green-dark);
+  --color-brand-primary-soft: var(--color-archive-green-soft);
+
+  --color-brand-accent: var(--color-antique-gold);
+  --color-brand-accent-dark: var(--color-antique-gold-dark);
+  --color-brand-accent-soft: var(--color-antique-gold-soft);
+
+  --color-brand-success: var(--color-success);
+  --color-brand-success-soft: var(--color-success-soft);
+  --color-brand-warning: var(--color-warning);
+  --color-brand-warning-soft: var(--color-warning-soft);
+  --color-brand-danger: var(--color-danger);
+  --color-brand-danger-soft: var(--color-danger-soft);
+  --color-brand-info: var(--color-info);
+  --color-brand-info-soft: var(--color-info-soft);
+
+  --color-brand-border: var(--color-border);
+  --color-brand-border-soft: var(--color-soft-border);
+  --color-brand-border-strong: var(--color-strong-border);
+
+  --color-brand-code-bg: var(--color-code-bg);
+  --color-brand-code-text: var(--color-code-text);
+  --color-brand-code-muted: var(--color-code-muted);
+
+  /* Override standard Tailwind v4 palette to propagate the theme automatically */
+  --color-gray-950: var(--color-paper);
+  --color-slate-950: var(--color-paper);
+  --color-slate-900: var(--color-surface);
+  --color-slate-800: var(--color-panel);
+  
+  /* Text overrides to prevent light text on light backgrounds */
+  --color-slate-50: var(--color-ink);
+  --color-slate-100: var(--color-ink);
+  --color-slate-200: var(--color-ink-soft);
+  --color-slate-300: var(--color-muted-ink);
+  --color-slate-400: var(--color-muted-ink);
+  --color-slate-500: var(--color-muted-ink);
+  --color-slate-650: var(--color-subtle-ink);
+  --color-slate-600: var(--color-subtle-ink);
+  --color-slate-700: var(--color-subtle-ink);
+  
+  --color-gray-50: var(--color-ink);
+  --color-gray-100: var(--color-ink);
+  --color-gray-200: var(--color-ink-soft);
+  --color-gray-300: var(--color-muted-ink);
+  --color-gray-400: var(--color-muted-ink);
+  --color-gray-500: var(--color-muted-ink);
+  --color-gray-600: var(--color-subtle-ink);
+
+  --color-zinc-50: var(--color-ink);
+  --color-zinc-100: var(--color-ink);
+  --color-zinc-200: var(--color-ink-soft);
+  --color-zinc-300: var(--color-muted-ink);
+  --color-zinc-400: var(--color-muted-ink);
+  --color-zinc-500: var(--color-muted-ink);
+  --color-zinc-650: var(--color-subtle-ink);
+  --color-zinc-600: var(--color-subtle-ink);
+
+  --color-neutral-50: var(--color-ink);
+  --color-neutral-100: var(--color-ink);
+  --color-neutral-200: var(--color-ink-soft);
+  --color-neutral-300: var(--color-muted-ink);
+  --color-neutral-400: var(--color-muted-ink);
+  --color-neutral-500: var(--color-muted-ink);
+  --color-neutral-600: var(--color-subtle-ink);
+  
+  /* Accent overrides */
+  --color-cyan-500: var(--color-archive-green);
+  --color-cyan-400: var(--color-antique-gold);
+  --color-cyan-600: var(--color-archive-green-dark);
+  --color-cyan-950: var(--color-panel);
+  
+  /* Status overrides */
+  --color-green-400: var(--color-success);
+  --color-green-500: var(--color-success);
+  --color-yellow-400: var(--color-warning);
+  --color-yellow-500: var(--color-warning);
+  --color-red-400: var(--color-danger);
+  --color-red-500: var(--color-danger);
+  --color-red-950: var(--color-surface);
+
+  /* Typography mapping */
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Source Sans 3", Inter, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* Custom premium design system elements */
+@layer base {
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: "Source Sans 3", "Inter", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom scrollbar for premium look */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-paper);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-ink);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Playfair Display", Georgia, serif;
+  }
+}
+
+/* Glassmorphism utility classes redefined for paper-and-ink */
+.glass-panel {
+  background: rgba(255, 253, 248, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+}
+
+.glass-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: var(--color-surface);
+  border-color: var(--color-archive-green);
+  box-shadow: 0 8px 30px -10px rgba(42, 71, 62, 0.15);
+  transform: translateY(-2px);
+}
