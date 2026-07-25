@@ -12,7 +12,9 @@ import PublicBooksPage from '../pages/public/PublicBooksPage';
 import PublicBookDetailPage from '../pages/public/PublicBookDetailPage';
 
 // Auth Pages
-import LoginPage from '../pages/auth/LoginPage';
+import UserLoginPage from '../pages/auth/UserLoginPage';
+import AdminLoginPage from '../pages/auth/AdminLoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
 
 // Dashboard Pages
 import DashboardHomePage from '../pages/dashboard/DashboardHomePage';
@@ -37,7 +39,9 @@ const AppRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/books" element={<PublicBooksPage />} />
         <Route path="/books/:slug" element={<PublicBookDetailPage />} />
-        <Route path="/login" element={<LoginPage />} />
+        <Route path="/login" element={<UserLoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
       </Route>
 
       {/* Protected Dashboard Routes */}

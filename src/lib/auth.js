@@ -39,6 +39,20 @@ export const isAdmin = (user) => {
 };
 
 /**
+ * Checks if the user is a public reader account
+ */
+export const isPublicUser = (user) => {
+  return user?.account_type === 'public' || user?.role === 'user';
+};
+
+/**
+ * Checks if the user is an admin/staff account
+ */
+export const isAdminUser = (user) => {
+  return user?.account_type === 'admin' || ['admin', 'operator', 'text_reviewer', 'cover_reviewer', 'rights_reviewer', 'viewer'].includes(user?.role);
+};
+
+/**
  * Checks if user is permitted to review text compositions
  */
 export const canReviewText = (user) => {

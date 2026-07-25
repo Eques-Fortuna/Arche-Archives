@@ -1,34 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { BookOpen, LogIn, LayoutDashboard, Menu, X } from 'lucide-react';
-import { isAuthenticated } from '../lib/auth';
+import { BookOpen, LogIn, LayoutDashboard, Menu, X, LogOut, UserPlus, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const PublicLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser, isAuthenticated, isAdminUser, isPublicUser, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [authed, setAuthed] = useState(isAuthenticated());
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
-    const handleAuthChange = () => {
-      setAuthed(isAuthenticated());
-    };
-
     window.addEventListener('scroll', handleScroll);
-    window.addEventListener('auth-change', handleAuthChange);
-    
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('auth-change', handleAuthChange);
     };
   }, []);
 
   const handleNavClick = () => {
     setMobileMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    toast.success('Logged out successfully.');
+    navigate('/');
   };
 
   const isActive = (path) => location.pathname === path;
@@ -78,18 +78,58 @@ const PublicLayout = () => {
               >
                 Browse Catalog
               </Link>
+              {!isAuthenticated && (
+                <>
+                  <Link
+                    to="/register"
+                    className={`text-xs font-sans font-bold uppercase tracking-wider transition-colors ${
+                      isActive('/register') ? 'text-[#2A473E] border-b-2 border-[#2A473E] pb-1' : 'text-[#5F5A52] hover:text-[#2A473E]'
+                    }`}
+                  >
+                    Register
+                  </Link>
+                  <Link
+                    to="/admin/login"
+                    className={`text-xs font-sans font-bold uppercase tracking-wider transition-colors ${
+                      isActive('/admin/login') ? 'text-[#2A473E] border-b-2 border-[#2A473E] pb-1' : 'text-[#5F5A52] hover:text-[#2A473E]'
+                    }`}
+                  >
+                    Staff Login
+                  </Link>
+                </>
+              )}
             </nav>
 
             {/* Action Buttons */}
             <div className="hidden md:flex items-center gap-4">
-              {authed ? (
-                <Link
-                  to="/dashboard"
-                  className="flex items-center gap-2 px-4 py-2 rounded text-xs font-sans font-bold uppercase tracking-widest text-[#FAF6EE] bg-[#2A473E] hover:bg-[#1E342D] shadow-sm transition-all duration-200"
-                >
-                  <LayoutDashboard className="w-4 h-4 text-[#FAF6EE]" />
-                  Dashboard
-                </Link>
+              {isAuthenticated ? (
+                <div className="flex items-center gap-4 select-none">
+                  {/* User Profile Info */}
+                  <div className="flex items-center gap-2 px-3 py-1 rounded bg-[#F1E7D6] border border-[#DED2BE]">
+                    <User className="w-3.5 h-3.5 text-[#5F5A52]" />
+                    <span className="text-[10px] font-sans font-bold uppercase tracking-wider text-[#5F5A52]">
+                      {currentUser?.name || 'Reader'}
+                    </span>
+                  </div>
+
+                  {isAdminUser && (
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-2 px-4 py-2 rounded text-xs font-sans font-bold uppercase tracking-widest text-[#FAF6EE] bg-[#2A473E] hover:bg-[#1E342D] shadow-sm transition-all duration-200"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-[#FAF6EE]" />
+                      Dashboard
+                    </Link>
+                  )}
+
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-[#8A2D3B] text-xs font-sans font-bold text-[#8A2D3B] hover:bg-[#8A2D3B]/5 active:scale-95 transition-all uppercase tracking-widest cursor-pointer shadow-sm"
+                  >
+                    <LogOut className="w-3 h-3" />
+                    Sign Out
+                  </button>
+                </div>
               ) : (
                 <Link
                   to="/login"
@@ -115,7 +155,7 @@ const PublicLayout = () => {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-b border-[#DED2BE] bg-[#FFFDF8]/95 backdrop-blur-lg">
+          <div className="md:hidden border-b border-[#DED2BE] bg-[#FFFDF8]/95 backdrop-blur-lg select-none text-left">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <Link
                 to="/"
@@ -135,16 +175,59 @@ const PublicLayout = () => {
               >
                 Browse Catalog
               </Link>
-              <div className="pt-4 border-t border-[#DED2BE] px-4 pb-2">
-                {authed ? (
+              
+              {!isAuthenticated && (
+                <>
                   <Link
-                    to="/dashboard"
+                    to="/register"
                     onClick={handleNavClick}
-                    className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded text-sm font-sans font-bold uppercase tracking-widest text-[#FAF6EE] bg-[#2A473E] transition-all"
+                    className={`block px-4 py-2.5 rounded text-sm font-sans font-bold uppercase tracking-widest ${
+                      isActive('/register') ? 'bg-[#2A473E]/10 text-[#2A473E]' : 'text-[#5F5A52] hover:bg-[#FAF6EE] hover:text-[#1A1A1A]'
+                    }`}
                   >
-                    <LayoutDashboard className="w-5 h-5 text-[#FAF6EE]" />
-                    Dashboard
+                    Register
                   </Link>
+                  <Link
+                    to="/admin/login"
+                    onClick={handleNavClick}
+                    className={`block px-4 py-2.5 rounded text-sm font-sans font-bold uppercase tracking-widest ${
+                      isActive('/admin/login') ? 'bg-[#2A473E]/10 text-[#2A473E]' : 'text-[#5F5A52] hover:bg-[#FAF6EE] hover:text-[#1A1A1A]'
+                    }`}
+                  >
+                    Staff Login
+                  </Link>
+                </>
+              )}
+
+              <div className="pt-4 border-t border-[#DED2BE] px-4 pb-2 space-y-2">
+                {isAuthenticated ? (
+                  <>
+                    <div className="flex items-center gap-2 px-4 py-2.5 rounded bg-[#F1E7D6]">
+                      <User className="w-4 h-4 text-[#5F5A52]" />
+                      <span className="text-xs font-sans font-bold uppercase tracking-wider text-[#5F5A52]">
+                        {currentUser?.name || 'Reader'}
+                      </span>
+                    </div>
+
+                    {isAdminUser && (
+                      <Link
+                        to="/dashboard"
+                        onClick={handleNavClick}
+                        className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded text-sm font-sans font-bold uppercase tracking-widest text-[#FAF6EE] bg-[#2A473E] transition-all"
+                      >
+                        <LayoutDashboard className="w-5 h-5 text-[#FAF6EE]" />
+                        Dashboard
+                      </Link>
+                    )}
+
+                    <button
+                      onClick={() => { handleNavClick(); handleLogout(); }}
+                      className="flex items-center justify-center gap-2 w-full px-5 py-3 rounded text-sm font-sans font-bold uppercase tracking-widest text-[#8A2D3B] border border-[#8A2D3B] bg-transparent hover:bg-[#8A2D3B]/5 transition-all"
+                    >
+                      <LogOut className="w-5 h-5 text-[#8A2D3B]" />
+                      Sign Out
+                    </button>
+                  </>
                 ) : (
                   <Link
                     to="/login"

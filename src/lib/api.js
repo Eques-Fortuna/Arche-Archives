@@ -28,15 +28,21 @@ api.interceptors.request.use(
 
 /**
  * Catch responses to check for unauthorized access (401)
- * Clears credentials and redirects to login path
+ * Clears credentials and redirects to the correct login path
  */
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       logout();
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      const path = window.location.pathname;
+      const isDashboard = path.startsWith('/dashboard') || error.config?.url?.includes('/api/admin/');
+      if (!path.includes('/login')) {
+        if (isDashboard) {
+          window.location.href = '/admin/login';
+        } else {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
@@ -44,17 +50,62 @@ api.interceptors.response.use(
 );
 
 /* ==========================================
-   ADMIN AUTH ENDPOINTS
+   AUTHENTICATION ENDPOINTS
    ========================================== */
 
 /**
- * Sign in to admin publisher console
- * @param {Object} credentials - { email, password }
- * @example
- * loginUser({ email: 'admin@arche.com', password: 'password123' })
+ * Public: Register a new reader user account
+ */
+export const registerUser = async (payload) => {
+  const response = await api.post('/api/auth/register', payload);
+  return response.data;
+};
+
+/**
+ * Public: Sign in to reader user account
  */
 export const loginUser = async (credentials) => {
+  const response = await api.post('/api/auth/login', credentials);
+  return response.data;
+};
+
+/**
+ * Public: Retrieve currently authenticated reader user profile
+ */
+export const getPublicMe = async () => {
+  const response = await api.get('/api/auth/me');
+  return response.data;
+};
+
+/**
+ * Public: Log out authenticated reader user
+ */
+export const logoutUser = async () => {
+  const response = await api.post('/api/auth/logout');
+  return response.data;
+};
+
+/**
+ * Admin: Sign in to admin/staff publisher console
+ */
+export const loginAdmin = async (credentials) => {
   const response = await api.post('/api/admin/auth/login', credentials);
+  return response.data;
+};
+
+/**
+ * Admin: Retrieve currently authenticated admin/staff profile
+ */
+export const getAdminMe = async () => {
+  const response = await api.get('/api/admin/auth/me');
+  return response.data;
+};
+
+/**
+ * Admin: Log out authenticated admin/staff user
+ */
+export const logoutAdmin = async () => {
+  const response = await api.post('/api/admin/auth/logout');
   return response.data;
 };
 

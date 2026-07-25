@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
@@ -7,6 +7,7 @@ import {
   getPublicBookChapters,
   getPublicBookDownloads
 } from '../../lib/api';
+import { useAuth } from '../../context/AuthContext';
 
 // Components
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -16,6 +17,8 @@ import { ArrowLeft, BookOpen, ShieldCheck, Download, FileText } from 'lucide-rea
 
 const PublicBookDetailPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [imageError, setImageError] = useState(false);
 
   // Queries
@@ -38,30 +41,64 @@ const PublicBookDetailPage = () => {
   const { data: downloads } = useQuery({
     queryKey: ['publicBookDownloads', slug],
     queryFn: () => getPublicBookDownloads(slug),
-    enabled: !!slug,
+    enabled: !!slug && isAuthenticated,
   });
 
-  const handleDownload = (format) => {
-    let url = '';
-    if (downloads) {
-      if (typeof downloads === 'object') {
-        url = downloads[`${format}_url`] || downloads[format];
-      }
-      if (Array.isArray(downloads)) {
-        const item = downloads.find((d) => String(d.file_type || d.format).toLowerCase() === format.toLowerCase());
-        url = item?.url || item?.storage_path;
-      }
+  const handleDownload = async (format) => {
+    if (!isAuthenticated) {
+      localStorage.setItem('redirect_download_slug', slug);
+      localStorage.setItem('redirect_download_format', format);
+      toast.error('Please log in to download this book.');
+      navigate(`/login?redirect=/books/${slug}`);
+      return;
     }
 
-    if (url) {
-      window.open(url, '_blank');
-      toast.success(`Starting secure ${format.toUpperCase()} download...`);
-    } else {
-      // Fallback preview link for mock
-      window.open(`https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf`, '_blank');
-      toast.success(`Starting secure ${format.toUpperCase()} download...`);
+    try {
+      let downloadData = downloads;
+      if (!downloadData) {
+        downloadData = await getPublicBookDownloads(slug);
+      }
+      let url = '';
+      if (downloadData) {
+        if (typeof downloadData === 'object') {
+          url = downloadData[`${format}_url`] || downloadData[format];
+        }
+        if (Array.isArray(downloadData)) {
+          const item = downloadData.find((d) => String(d.file_type || d.format).toLowerCase() === format.toLowerCase());
+          url = item?.url || item?.storage_path;
+        }
+      }
+
+      if (url) {
+        window.open(url, '_blank');
+        toast.success(`Starting secure ${format.toUpperCase()} download...`);
+      } else {
+        toast.error(`This format (${format.toUpperCase()}) is not available yet.`);
+      }
+    } catch (error) {
+      if (error.response?.data?.error === 'AUTH_REQUIRED') {
+        toast.error('Please log in to download this book.');
+        navigate(`/login?redirect=/books/${slug}`);
+      } else {
+        toast.error(`This format (${format.toUpperCase()}) is not available yet.`);
+      }
     }
   };
+
+  // Auto-resume download after logging in
+  useEffect(() => {
+    const pendingSlug = localStorage.getItem('redirect_download_slug');
+    const pendingFormat = localStorage.getItem('redirect_download_format');
+    if (isAuthenticated && pendingSlug === slug && pendingFormat) {
+      localStorage.removeItem('redirect_download_slug');
+      localStorage.removeItem('redirect_download_format');
+      // Delay slightly for smooth page load transition
+      const timer = setTimeout(() => {
+        handleDownload(pendingFormat);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, slug, downloads]);
 
   if (bookLoading) {
     return <LoadingSpinner message="Opening archived manuscript details..." />;
@@ -229,32 +266,46 @@ const PublicBookDetailPage = () => {
 
           {/* Downloads Action buttons */}
           <div className="space-y-3 pt-2 border-t border-[var(--color-border)]/50">
-            <span className="text-[9px] text-[var(--color-muted-ink)] font-bold uppercase tracking-widest block font-sans">
-              Download Artifact Files
-            </span>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <span className="text-[9px] text-[var(--color-muted-ink)] font-bold uppercase tracking-widest block font-sans">
+                Download Artifact Files
+              </span>
+              {!isAuthenticated && (
+                <span className="text-[9px] text-[var(--color-warning)] font-bold uppercase tracking-widest block font-sans">
+                  Reader Login Required
+                </span>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <button
                 onClick={() => handleDownload('pdf')}
                 className="flex items-center justify-center gap-2 py-3 bg-[var(--color-archive-green)] hover:bg-[var(--color-archive-green-dark)] text-[var(--color-surface)] font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm border border-transparent"
               >
                 <Download className="w-4 h-4" />
-                Download PDF (HD)
+                {isAuthenticated ? 'Download PDF (HD)' : 'Log in to download PDF'}
               </button>
               <button
                 onClick={() => handleDownload('epub')}
-                className="flex items-center justify-center gap-2 py-3 border border-dashed border-[var(--color-archive-green)] hover:bg-[var(--color-archive-green-soft)]/20 text-[var(--color-archive-green)] font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer"
+                className="flex items-center justify-center gap-2 py-3 border border-dashed border-[var(--color-archive-green)] hover:bg-[var(--color-archive-green-soft)]/20 text-[var(--color-archive-green)] font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer bg-transparent"
               >
                 <Download className="w-4 h-4" />
-                Download EPUB
+                {isAuthenticated ? 'Download EPUB' : 'Log in to download EPUB'}
               </button>
               <button
                 onClick={() => handleDownload('docx')}
                 className="flex items-center justify-center gap-2 py-3 border border-[var(--color-archive-green)] hover:bg-[var(--color-archive-green-soft)]/20 text-[var(--color-archive-green)] font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer bg-transparent"
               >
                 <Download className="w-4 h-4" />
-                Raw Text (DOCX)
+                {isAuthenticated ? 'Raw Text (DOCX)' : 'Log in to download DOCX'}
               </button>
             </div>
+
+            {!isAuthenticated && (
+              <p className="text-[10px] text-[var(--color-muted-ink)] font-sans italic leading-relaxed pt-1">
+                Reader accounts are required for downloads so Arche Archives can protect access, track usage, and prevent abuse. Browsing remains public.
+              </p>
+            )}
           </div>
         </div>
       </div>

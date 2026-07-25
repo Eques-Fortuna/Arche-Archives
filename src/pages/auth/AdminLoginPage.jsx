@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { BookOpen, Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 
-const LoginPage = () => {
+const AdminLoginPage = () => {
   const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
+  const { loginAdmin, isAuthenticated, isAdminUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated
-  if (isAuthenticated) {
+  // Redirect if already authenticated as admin
+  if (isAuthenticated && isAdminUser) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -30,11 +30,11 @@ const LoginPage = () => {
 
   const onSubmit = async (data) => {
     setIsLoading(true);
-    const res = await login(data.email, data.password);
+    const res = await loginAdmin(data.email, data.password);
     setIsLoading(false);
     
     if (res.success) {
-      toast.success('Successfully authenticated session at The Scriptorium.');
+      toast.success('Successfully authenticated staff session.');
       navigate('/dashboard');
     } else {
       toast.error(res.error || 'Invalid operational credentials.');
@@ -47,16 +47,16 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex-grow flex items-center justify-center px-4 py-16 relative bg-[#FAF6EE] text-[#1A1A1A]">
-      <div className="glass-panel max-w-md w-full rounded p-8 sm:p-10 relative overflow-hidden shadow-sm border border-[#DED2BE] bg-[#FFFDF8]">
+    <div className="flex-grow flex items-center justify-center px-4 py-16 relative bg-[#FAF6EE] text-[#1A1A1A] font-sans">
+      <div className="glass-panel max-w-md w-full rounded-2xl p-8 sm:p-10 relative overflow-hidden shadow-sm border border-[#DED2BE] bg-[#FFFDF8]">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center space-y-3 mb-8 border-b border-[#DED2BE] pb-6">
-          <div className="p-3 rounded bg-[#2A473E] text-[#FAF6EE] shadow-sm">
+          <div className="p-3 rounded-xl bg-[#2A473E] text-[#FAF6EE] shadow-sm">
             <BookOpen className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-bold text-[#2A473E] font-serif tracking-wide mt-1">The Scriptorium</h2>
           <p className="text-[10px] uppercase font-bold tracking-widest text-[#5F5A52]">
-            Arche Archives Credentials Verification
+            Staff & Operator Credentials Verification
           </p>
         </div>
 
@@ -79,7 +79,7 @@ const LoginPage = () => {
                     message: 'Invalid email address',
                   },
                 })}
-                className="w-full pl-12 pr-4 py-3 bg-[#FAF6EE] border border-[#DED2BE] rounded text-sm text-[#1A1A1A] placeholder-[#756F64] focus:outline-none focus:border-[#2A473E] transition-all font-sans"
+                className="w-full pl-12 pr-4 py-3 bg-[#FAF6EE] border border-[#DED2BE] rounded-xl text-sm text-[#1A1A1A] placeholder-[#756F64] focus:outline-none focus:border-[#2A473E] transition-all font-sans"
               />
             </div>
             {errors.email && (
@@ -104,7 +104,7 @@ const LoginPage = () => {
                     message: 'Security key must be at least 6 characters',
                   },
                 })}
-                className="w-full pl-12 pr-12 py-3 bg-[#FAF6EE] border border-[#DED2BE] rounded text-sm text-[#1A1A1A] placeholder-[#756F64] focus:outline-none focus:border-[#2A473E] transition-all font-sans"
+                className="w-full pl-12 pr-12 py-3 bg-[#FAF6EE] border border-[#DED2BE] rounded-xl text-sm text-[#1A1A1A] placeholder-[#756F64] focus:outline-none focus:border-[#2A473E] transition-all font-sans"
               />
               <button
                 type="button"
@@ -123,7 +123,7 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex items-center justify-center gap-2 w-full py-3.5 rounded text-xs font-sans font-bold uppercase tracking-widest text-[#FAF6EE] bg-[#2A473E] hover:bg-[#1E342D] disabled:bg-[#FAF6EE] disabled:text-[#5F5A52] disabled:border-[#DED2BE] border border-transparent disabled:scale-100 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-95 shadow-sm transition-all duration-200 cursor-pointer"
+            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl text-xs font-sans font-bold uppercase tracking-widest text-[#FAF6EE] bg-[#2A473E] hover:bg-[#1E342D] disabled:bg-[#FAF6EE] disabled:text-[#5F5A52] disabled:border-[#DED2BE] border border-transparent disabled:scale-100 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-95 shadow-sm transition-all duration-200 cursor-pointer"
           >
             {isLoading ? (
               <>
@@ -131,10 +131,20 @@ const LoginPage = () => {
                 Authenticating Session...
               </>
             ) : (
-              'Verify Credentials'
+              'Verify Staff Credentials'
             )}
           </button>
         </form>
+
+        {/* Navigation alternatives */}
+        <div className="mt-6 pt-4 border-t border-[#DED2BE] flex flex-col items-center gap-2 text-xs">
+          <Link to="/login" className="text-[var(--color-archive-green)] hover:underline font-bold">
+            Looking for Reader Login?
+          </Link>
+          <Link to="/" className="text-[var(--color-muted-ink)] hover:underline font-bold">
+            ← Back to Public Library
+          </Link>
+        </div>
 
         {/* Testing helper info */}
         <div className="mt-8 pt-6 border-t border-[#DED2BE] space-y-3">
@@ -147,7 +157,7 @@ const LoginPage = () => {
               Autofill Credentials
             </button>
           </div>
-          <div className="bg-[#FAF6EE] border border-[#DED2BE] rounded p-3.5 space-y-1 text-xs font-sans text-left">
+          <div className="bg-[#FAF6EE] border border-[#DED2BE] rounded-xl p-3.5 space-y-1 text-xs font-sans text-left">
             <div className="flex justify-between">
               <span className="text-[#5F5A52]">Admin login:</span>
               <span className="font-mono text-[#1A1A1A] font-bold">admin@arche.com</span>
@@ -163,4 +173,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default AdminLoginPage;
