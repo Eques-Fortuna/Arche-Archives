@@ -32,17 +32,7 @@ const PublicBooksPage = () => {
       else if (Array.isArray(data.books)) list = data.books;
     }
 
-    // Fallback static items if DB is currently empty for testing
-    if (list.length === 0 && !isLoading && !error) {
-      list = [
-        { book_id: '1', title: 'The Echoes of Antiquity', author: 'Marcus Aurelius Thorne', slug: 'echoes-of-antiquity', work_type: 'Philosophy', description: 'A profound exploration of lost Stoic fragments discovered in the subterranean vaults.' },
-        { book_id: '2', title: 'Celestial Mechanics', author: 'Dr. Helena Vance', slug: 'celestial-mechanics', work_type: 'Science', description: 'Tracing the evolution of astronomical notation from 15th-century woodcuts.' },
-        { book_id: '3', title: 'The Last Archivist', author: 'Julian S. Penhaligon', slug: 'last-archivist', work_type: 'Fiction', description: 'A haunting fictional narrative set in a crumbling coastal manor where a recluse librarian discovers a manuscript.' },
-        { book_id: '4', title: 'De Natura Rerum', author: 'Lucretius (Annotated)', slug: 'de-natura-rerum', work_type: 'Latin', description: 'A definitive digital transcription of the 1612 Parisian edition, complete with exhaustive marginalia.' },
-        { book_id: '5', title: 'The Ethics of Info', author: 'Prof. Alistair Kaye', slug: 'ethics-of-info', work_type: 'Philosophy', description: 'A critical investigation into the preservation of digital artifacts.' },
-        { book_id: '6', title: "Chroniques de l'Ombre", author: 'Elise Beaumont', slug: 'chroniques-de-l-ombre', work_type: 'French', description: 'A collection of rare short stories from the Belle Époque, translated and meticulously restored.' }
-      ];
-    }
+
 
     // Search keyword
     if (search.trim()) {
