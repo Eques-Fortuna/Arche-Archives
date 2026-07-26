@@ -6,6 +6,7 @@ import { Play, RotateCcw, Eye, ArrowLeft, Loader2, AlertCircle, CheckCircle2, Up
 import { getEligibleBooks, runPhase, runPhaseBatch, retryPhase } from '../../lib/api';
 import { getPhaseConfig } from '../../lib/phaseConfig';
 import { useAuth } from '../../context/AuthContext';
+import { canRunAutomation, canRetry, canUploadHumanCover } from '../../lib/auth';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
@@ -27,7 +28,9 @@ const PhaseIngestionPage = () => {
   const [activeLogic, setActiveLogic] = useState('ai'); // 'ai' or 'human' (for cover gen)
 
   const phaseConfig = getPhaseConfig(stage);
-  const canTrigger = user?.role === 'admin' || user?.role === 'operator' || user?.role === 'cover_reviewer';
+  const canRun = canRunAutomation(user);
+  const canRet = canRetry(user);
+  const canUpload = canUploadHumanCover(user);
 
   // Fetch eligible books from the backend using the canonical phase name
   const {
@@ -107,7 +110,7 @@ const PhaseIngestionPage = () => {
   const isBatchButtonDisabled =
     eligibleLoading ||
     runBatchMutation.isPending ||
-    !canTrigger ||
+    !canRun ||
     !phaseConfig ||
     (eligibleData?.ok && eligibleBooks.length === 0);
 
@@ -164,7 +167,7 @@ const PhaseIngestionPage = () => {
                 ))}
               </div>
 
-              {canTrigger && (
+              {canRun ? (
                 <Button
                   variant="primary"
                   onClick={() => setShowBatchConfirm(true)}
@@ -175,6 +178,11 @@ const PhaseIngestionPage = () => {
                   <Play className="w-3.5 h-3.5" />
                   Initiate Phase {phaseConfig.number} for Eligible Volumes
                 </Button>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-danger-soft)] border border-[var(--color-danger)]/25 text-[var(--color-danger)] text-xs font-bold rounded">
+                  <ShieldAlert className="w-4 h-4 shrink-0" />
+                  <span>Read-Only: Phase Execution Restricted</span>
+                </div>
               )}
             </div>
           </Card>
@@ -211,12 +219,19 @@ const PhaseIngestionPage = () => {
 
                 <button
                   onClick={() => {
+                    if (!canUpload) {
+                      toast.error('You do not have permission to upload cover designs.');
+                      return;
+                    }
                     setActiveLogic('human');
                     if (eligibleBooks.length > 0) {
                       setSelectedBookForUpload(eligibleBooks[0]);
                     }
                   }}
-                  className={`w-full text-left p-4 rounded border transition-all cursor-pointer flex items-start gap-3 ${
+                  disabled={!canUpload}
+                  className={`w-full text-left p-4 rounded border transition-all flex items-start gap-3 ${
+                    !canUpload ? 'opacity-55 cursor-not-allowed border-[#DED2BE] bg-[#FAF6EE]/50 text-[#5F5A52]' : 'cursor-pointer'
+                  } ${
                     activeLogic === 'human'
                       ? 'border-[#2A473E] bg-[#2A473E]/5 text-[#1A1A1A]'
                       : 'border-[#DED2BE] bg-[#FAF6EE] text-[#5F5A52]'
@@ -316,7 +331,7 @@ const PhaseIngestionPage = () => {
 
                   {/* Actions right side aligned */}
                   <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-                    {isFailed && (
+                    {isFailed && canRet && (
                       <button
                         onClick={() => setConfirmRetryId(book.book_id)}
                         className="flex items-center gap-1.5 px-3 py-1.5 border border-[#B86B3E] text-[10px] font-sans font-bold text-[#B86B3E] hover:bg-[#B86B3E]/5 uppercase tracking-widest rounded transition-all cursor-pointer shadow-sm"
@@ -326,7 +341,7 @@ const PhaseIngestionPage = () => {
                         Retry
                       </button>
                     )}
-                    {canTrigger && !isRunning && (
+                    {canRun && !isRunning && (
                       <button
                         onClick={() => runNextMutation.mutate(book.book_id)}
                         className="flex items-center gap-1.5 px-3 py-1.5 border border-[#3F6F5A] text-[10px] font-sans font-bold text-[#3F6F5A] hover:bg-[#3F6F5A]/5 uppercase tracking-widest rounded transition-all cursor-pointer shadow-sm"

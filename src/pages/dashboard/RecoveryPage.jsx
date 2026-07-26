@@ -14,9 +14,13 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import RecoveryActionModal from '../../components/recovery/RecoveryActionModal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorState from '../../components/ui/ErrorState';
-import { Terminal, Clock } from 'lucide-react';
+import { Terminal, Clock, ShieldAlert } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { canRunAutomation, canRetry } from '../../lib/auth';
 
 const RecoveryPage = () => {
+  const { user } = useAuth();
+  const canRun = canRunAutomation(user);
   const queryClient = useQueryClient();
   
   // Search & Filter State
@@ -160,12 +164,32 @@ const RecoveryPage = () => {
     );
   }
 
-  // Fallback data if DB is currently empty for testing
-  const finalRecoveryList = filteredData.length > 0 ? filteredData : [
-    { book_id: '8821', title: 'The Golden Bough', recovery_phase: 'Structure Parsing', error_type: 'JSON Mismatch', last_error: 'Unexpected token < in JSON at position 0', recovery_attempts: 3, updated_at: new Date().toISOString() },
-    { book_id: '8842', title: 'Moby Dick (Folio Ed.)', recovery_phase: 'Metadata Sync', error_type: 'Auth Timeout', last_error: 'Connection request timed out during DigitalOcean credentials handshake.', recovery_attempts: 1, updated_at: new Date().toISOString() },
-    { book_id: '8910', title: 'Ars Magna Lucis', recovery_phase: 'OCR Enrichment', error_type: 'Heap Limit', last_error: 'FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory', recovery_attempts: 4, updated_at: new Date().toISOString() }
-  ];
+  if (filteredData.length === 0) {
+    return (
+      <div className="space-y-6 w-full font-sans text-[var(--color-ink)] text-left">
+        {/* Header and title */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-[var(--color-border)] pb-5 gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-[var(--color-archive-green)] font-serif leading-tight flex items-center gap-3">
+              Arche Portal Recovery
+              <span className="px-2.5 py-0.5 rounded bg-[var(--color-panel)] border border-[var(--color-border)] text-[9px] font-sans font-bold text-[var(--color-muted-ink)] uppercase tracking-widest">
+                Curator Queue
+              </span>
+            </h2>
+            <p className="text-xs text-[var(--color-muted-ink)] mt-1">Automated ingestion failures requiring curator intervention.</p>
+          </div>
+        </div>
+        <Card className="p-12 border border-[var(--color-border)] overflow-hidden bg-[var(--color-surface)]">
+          <EmptyState
+            title="No failed automation runs."
+            description="Recovery items will appear here when a phase fails."
+          />
+        </Card>
+      </div>
+    );
+  }
+
+  const finalRecoveryList = filteredData;
 
   const activeItem = activeRecovery || finalRecoveryList[0];
 
@@ -290,35 +314,45 @@ const RecoveryPage = () => {
                     placeholder="Document the remediation steps here..."
                     value={curatorNotes}
                     onChange={(e) => setCuratorNotes(e.target.value)}
+                    disabled={!canRun}
                     rows={2}
-                    className="w-full p-2.5 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-ink)] placeholder-[var(--color-muted-ink)]/60 focus:outline-none focus:border-[var(--color-archive-green)] transition-all font-sans"
+                    className="w-full p-2.5 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-ink)] placeholder-[var(--color-muted-ink)]/60 focus:outline-none focus:border-[var(--color-archive-green)] transition-all font-sans disabled:opacity-75 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
 
               {/* Actions stacked triggers */}
-              <div className="pt-4 border-t border-[var(--color-border)] space-y-2">
-                <div className="grid grid-cols-2 gap-2">
+              {!canRun ? (
+                <div className="pt-4 border-t border-[var(--color-border)]">
+                  <div className="p-3 bg-[var(--color-danger-soft)]/20 border border-[var(--color-danger)]/15 text-[var(--color-danger)] rounded-xl text-xs flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 shrink-0" />
+                    <span>Read-only: Recovery actions are restricted.</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-4 border-t border-[var(--color-border)] space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setMarkReadyId(activeItem.book_id)}
+                      className="flex items-center justify-center p-2.5 bg-[var(--color-warning)] hover:bg-[var(--color-warning)]/90 text-[var(--color-surface)] font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm border border-transparent"
+                    >
+                      Mark Ready
+                    </button>
+                    <button
+                      onClick={() => setConfirmRetryId(activeItem.book_id)}
+                      className="flex items-center justify-center p-2.5 bg-[var(--color-archive-green)] hover:bg-[var(--color-archive-green-dark)] text-[var(--color-surface)] font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm border border-transparent"
+                    >
+                      Retry Now
+                    </button>
+                  </div>
                   <button
-                    onClick={() => setMarkReadyId(activeItem.book_id)}
-                    className="flex items-center justify-center p-2.5 bg-[var(--color-warning)] hover:bg-[var(--color-warning)]/90 text-[var(--color-surface)] font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm border border-transparent"
+                    onClick={() => setConfirmBlockId(activeItem.book_id)}
+                    className="w-full flex items-center justify-center p-2.5 bg-[var(--color-danger)] hover:bg-[var(--color-danger)]/90 text-[var(--color-surface)] font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm border border-transparent"
                   >
-                    Mark Ready
-                  </button>
-                  <button
-                    onClick={() => setConfirmRetryId(activeItem.book_id)}
-                    className="flex items-center justify-center p-2.5 bg-[var(--color-archive-green)] hover:bg-[var(--color-archive-green-dark)] text-[var(--color-surface)] font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm border border-transparent"
-                  >
-                    Retry Now
+                    Block Book
                   </button>
                 </div>
-                <button
-                  onClick={() => setConfirmBlockId(activeItem.book_id)}
-                  className="w-full flex items-center justify-center p-2.5 bg-[var(--color-danger)] hover:bg-[var(--color-danger)]/90 text-[var(--color-surface)] font-bold text-[10px] uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm border border-transparent"
-                >
-                  Block Book
-                </button>
-              </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-16 text-[var(--color-muted-ink)] text-xs">

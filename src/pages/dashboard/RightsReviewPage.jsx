@@ -81,8 +81,8 @@ const RightsReviewPage = () => {
         </div>
       ) : (
         <EmptyState
-          title="Review Queue Clear"
-          description="There are no books currently awaiting rights clearance audits."
+          title="No books waiting for rights review."
+          description=""
         />
       )}
     </div>

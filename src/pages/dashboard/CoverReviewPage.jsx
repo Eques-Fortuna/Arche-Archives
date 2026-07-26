@@ -11,13 +11,15 @@ import {
   getFileSignedUrl
 } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { canReviewCovers, canUploadHumanCover } from '../../lib/auth';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorState from '../../components/ui/ErrorState';
 import EmptyState from '../../components/ui/EmptyState';
 import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { Check, RefreshCw, Upload, Loader2, BookOpen, Clock, Terminal } from 'lucide-react';
+import Card from '../../components/ui/Card';
+import { Check, RefreshCw, Upload, Loader2, BookOpen, Clock, Terminal, ShieldAlert } from 'lucide-react';
 
 const CoverReviewPage = () => {
   const queryClient = useQueryClient();
@@ -201,8 +203,8 @@ const CoverReviewPage = () => {
   if (books.length === 0) {
     return (
       <EmptyState
-        title="Review Queue Clear"
-        description="There are no books currently awaiting cover graphic reviews."
+        title="No books waiting for cover review."
+        description=""
       />
     );
   }
@@ -247,27 +249,35 @@ const CoverReviewPage = () => {
           {/* Drag & Drop Override Box */}
           <div className="border-t border-[var(--color-border)] pt-4 mt-4 space-y-2">
             <span className="text-[9px] text-[var(--color-muted-ink)] font-bold uppercase tracking-widest block px-2">Human Design Override</span>
-            <div className="relative border border-dashed border-[var(--color-border)] hover:border-[var(--color-archive-green)] rounded-xl p-4 transition-all bg-[var(--color-surface)] flex flex-col items-center justify-center text-center gap-2 cursor-pointer group shadow-sm h-36">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => handleHumanCoverUpload(e.target.files[0])}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={isUploadingHuman}
-              />
-              {isUploadingHuman ? (
-                <div className="space-y-1">
-                  <Loader2 className="w-5 h-5 text-[var(--color-archive-green)] animate-spin mx-auto" />
-                  <span className="text-[9px] text-[var(--color-muted-ink)]">Uploading design...</span>
-                </div>
-              ) : (
-                <>
-                  <Upload className="w-5 h-5 text-[var(--color-muted-ink)] group-hover:text-[var(--color-archive-green)] transition-colors" />
-                  <span className="text-[10px] font-bold text-[var(--color-ink)] block">Upload human cover</span>
-                  <span className="text-[9px] text-[var(--color-subtle-ink)] block leading-normal">Bypasses generative pipeline stages</span>
-                </>
-              )}
-            </div>
+            {!canUploadHumanCover(currentUser) ? (
+              <div className="border border-dashed border-[var(--color-border)] rounded-xl p-4 bg-[var(--color-surface)] flex flex-col items-center justify-center text-center gap-2 h-36">
+                <ShieldAlert className="w-5 h-5 text-[var(--color-danger)] animate-pulse" />
+                <span className="text-[10px] font-bold text-[var(--color-danger)] block">Upload Disabled</span>
+                <span className="text-[9px] text-[var(--color-muted-ink)] block leading-normal">Cover reviewers only</span>
+              </div>
+            ) : (
+              <div className="relative border border-dashed border-[var(--color-border)] hover:border-[var(--color-archive-green)] rounded-xl p-4 transition-all bg-[var(--color-surface)] flex flex-col items-center justify-center text-center gap-2 cursor-pointer group shadow-sm h-36">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleHumanCoverUpload(e.target.files[0])}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  disabled={isUploadingHuman}
+                />
+                {isUploadingHuman ? (
+                  <div className="space-y-1">
+                    <Loader2 className="w-5 h-5 text-[var(--color-archive-green)] animate-spin mx-auto" />
+                    <span className="text-[9px] text-[var(--color-muted-ink)]">Uploading design...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5 text-[var(--color-muted-ink)] group-hover:text-[var(--color-archive-green)] transition-colors" />
+                    <span className="text-[10px] font-bold text-[var(--color-ink)] block">Upload human cover</span>
+                    <span className="text-[9px] text-[var(--color-subtle-ink)] block leading-normal">Bypasses generative pipeline stages</span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -286,22 +296,30 @@ const CoverReviewPage = () => {
 
                 {/* Confirm actions top right */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => handleTriggerAction('reject')}
-                    disabled={actionMutation.isPending}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--color-danger)] text-[10px] font-sans font-bold text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)] uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    Reject & Regenerate
-                  </button>
-                  <button
-                    onClick={() => handleTriggerAction('approve')}
-                    disabled={actionMutation.isPending}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-archive-green)] text-[10px] font-sans font-bold text-[var(--color-surface)] hover:bg-[var(--color-archive-green-dark)] border border-transparent uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm"
-                  >
-                    <Check className="w-3 h-3" />
-                    Approve Selected
-                  </button>
+                  {canReviewCovers(currentUser) ? (
+                    <>
+                      <button
+                        onClick={() => handleTriggerAction('reject')}
+                        disabled={actionMutation.isPending}
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--color-danger)] text-[10px] font-sans font-bold text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)] uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Reject & Regenerate
+                      </button>
+                      <button
+                        onClick={() => handleTriggerAction('approve')}
+                        disabled={actionMutation.isPending}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--color-archive-green)] text-[10px] font-sans font-bold text-[var(--color-surface)] hover:bg-[var(--color-archive-green-dark)] border border-transparent uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm"
+                      >
+                        <Check className="w-3 h-3" />
+                        Approve Selected
+                      </button>
+                    </>
+                  ) : (
+                    <span className="px-2.5 py-1 bg-[var(--color-danger-soft)]/20 border border-[var(--color-danger)]/15 text-[var(--color-danger)] text-[9px] font-sans font-bold uppercase tracking-widest rounded-xl">
+                      Read Only
+                    </span>
+                  )}
                 </div>
               </div>
 

@@ -5,7 +5,8 @@ import {
   getAdminBooks,
   publishBook,
   unpublishBook,
-  archiveBook
+  archiveBook,
+  unarchiveBook
 } from '../../lib/api';
 
 // Components
@@ -16,9 +17,15 @@ import PublishModal from '../../components/books/PublishModal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorState from '../../components/ui/ErrorState';
 import EmptyState from '../../components/ui/EmptyState';
-import { Check, BookOpen, Terminal, Archive, UploadCloud } from 'lucide-react';
+import { Check, BookOpen, Terminal, Archive, UploadCloud, ShieldAlert, RotateCcw } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { canPublish, canArchive, canUnarchive } from '../../lib/auth';
 
 const PublishingPage = () => {
+  const { user } = useAuth();
+  const canPub = canPublish(user);
+  const canArc = canArchive(user);
+  const canUnarc = canUnarchive(user);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('ready');
 
@@ -26,6 +33,7 @@ const PublishingPage = () => {
   const [publishingBook, setPublishingBook] = useState(null);
   const [confirmUnpublishId, setConfirmUnpublishId] = useState(null);
   const [confirmArchiveId, setConfirmArchiveId] = useState(null);
+  const [confirmUnarchiveId, setConfirmUnarchiveId] = useState(null);
 
   // Fetch catalog books list
   const { data, isLoading, error, refetch } = useQuery({
@@ -72,6 +80,20 @@ const PublishingPage = () => {
     },
   });
 
+  const unarchiveMutation = useMutation({
+    mutationFn: (bookId) => unarchiveBook(bookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminBooksPublishing'] });
+      queryClient.invalidateQueries({ queryKey: ['adminBooks'] });
+      toast.success('Book unarchived successfully.');
+      setConfirmUnarchiveId(null);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to unarchive book.');
+      setConfirmUnarchiveId(null);
+    },
+  });
+
   // Handlers
   const handlePublishSubmit = (payload) => {
     if (publishingBook) {
@@ -90,6 +112,13 @@ const PublishingPage = () => {
       archiveMutation.mutate(confirmArchiveId);
     }
   };
+
+  const handleUnarchiveConfirm = () => {
+    if (confirmUnarchiveId) {
+      unarchiveMutation.mutate(confirmUnarchiveId);
+    }
+  };
+
 
   const books = Array.isArray(data) ? data : [];
 
@@ -119,10 +148,18 @@ const PublishingPage = () => {
     });
   }, [books]);
 
+  const archivedBooks = useMemo(() => {
+    return books.filter((b) => 
+      String(b.publication_status).toLowerCase() === 'archived' || 
+      String(b.publicationStatus).toLowerCase() === 'archived'
+    );
+  }, [books]);
+
   const tabs = [
     { id: 'ready', label: `Ready to Publish (${readyBooks.length})` },
     { id: 'published', label: `Published (${publishedBooks.length})` },
     { id: 'blocked', label: `In Progress / Blocked (${blockedBooks.length})` },
+    { id: 'archived', label: `Archived (${archivedBooks.length})` },
   ];
 
   if (isLoading) {
@@ -141,10 +178,22 @@ const PublishingPage = () => {
 
   const renderBookGrid = (booksList, type) => {
     if (booksList.length === 0) {
+      let title = `No ${type} Books`;
+      let description = `There are currently no books in the ${type} queue.`;
+      if (type === 'ready') {
+        title = "No books are ready to publish.";
+        description = "Books will appear here after text, cover, and rights approvals are complete.";
+      } else if (type === 'published') {
+        title = "No books are currently published.";
+        description = "";
+      } else if (type === 'archived') {
+        title = "No archived books.";
+        description = "Archived books will appear here after they are removed from active publishing.";
+      }
       return (
         <EmptyState
-          title={`No ${type} Books`}
-          description={`There are currently no books in the ${type} queue.`}
+          title={title}
+          description={description}
         />
       );
     }
@@ -174,6 +223,15 @@ const PublishingPage = () => {
                 <p className="text-[11px] text-[var(--color-muted-ink)] font-bold uppercase tracking-wider font-sans">
                   {book.author}, {book.publication_year || '2024'}
                 </p>
+                <div className="text-[10px] text-[var(--color-muted-ink)] font-mono space-y-0.5 mt-1 select-all">
+                  <div>Slug: {book.slug}</div>
+                  <div>Stage: <span className="font-bold uppercase tracking-wider">{book.current_stage || 'Unknown'}</span></div>
+                  {type === 'archived' && (
+                    <div className="text-[var(--color-danger)] font-bold">
+                      Archived: {book.archived_at ? new Date(book.archived_at).toLocaleDateString() : book.updated_at ? new Date(book.updated_at).toLocaleDateString() : 'N/A'}
+                    </div>
+                  )}
+                </div>
                 
                 {/* Visual checkpoints checklist */}
                 <div className="pt-2 space-y-1 text-[10px] text-[var(--color-ink)] font-bold font-mono">
@@ -195,19 +253,21 @@ const PublishingPage = () => {
               {/* Action buttons footer inside card */}
               <div className="pt-3 border-t border-[var(--color-border)]/50 mt-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[9px] text-[var(--color-muted-ink)] font-bold uppercase tracking-widest block font-sans">
-                  STATUS: {type === 'published' ? 'Live on Catalog' : type === 'blocked' ? 'Review Hold' : 'Ready for Dist.'}
+                  STATUS: {type === 'published' ? 'Live on Catalog' : type === 'blocked' ? 'Review Hold' : type === 'archived' ? 'Archived' : 'Ready for Dist.'}
                 </span>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setConfirmArchiveId(book.book_id)}
-                    className="flex items-center gap-1 px-2.5 py-1 border border-[var(--color-border)] text-[9px] font-sans font-bold text-[var(--color-muted-ink)] hover:bg-[var(--color-panel)] uppercase tracking-widest rounded-xl transition-all cursor-pointer"
-                  >
-                    <Archive className="w-3 h-3" />
-                    Archive
-                  </button>
+                  {canArc && type !== 'archived' && (
+                    <button
+                      onClick={() => setConfirmArchiveId(book.book_id)}
+                      className="flex items-center gap-1 px-2.5 py-1 border border-[var(--color-border)] text-[9px] font-sans font-bold text-[var(--color-muted-ink)] hover:bg-[var(--color-panel)] uppercase tracking-widest rounded-xl transition-all cursor-pointer"
+                    >
+                      <Archive className="w-3 h-3" />
+                      Archive
+                    </button>
+                  )}
                   
-                  {type === 'ready' && (
+                  {type === 'ready' && canPub && (
                     <button
                       onClick={() => setPublishingBook(book)}
                       className="flex items-center gap-1 px-2.5 py-1 bg-[var(--color-archive-green)] text-[9px] font-sans font-bold text-[var(--color-surface)] hover:bg-[var(--color-archive-green-dark)] border border-transparent uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm animate-pulse"
@@ -216,13 +276,32 @@ const PublishingPage = () => {
                       Publish
                     </button>
                   )}
-                  {type === 'published' && (
+                  {type === 'published' && canPub && (
                     <button
                       onClick={() => setConfirmUnpublishId(book.book_id)}
                       className="flex items-center gap-1 px-2.5 py-1 border border-[var(--color-danger)] text-[9px] font-sans font-bold text-[var(--color-danger)] hover:bg-[var(--color-danger-soft)] uppercase tracking-widest rounded-xl transition-all cursor-pointer"
                     >
                       Revoke
                     </button>
+                  )}
+                  {type === 'archived' && canUnarc && (
+                    <button
+                      onClick={() => setConfirmUnarchiveId(book.book_id)}
+                      className="flex items-center gap-1 px-2.5 py-1 bg-[var(--color-archive-green)] text-[9px] font-sans font-bold text-[var(--color-surface)] hover:bg-[var(--color-archive-green-dark)] border border-transparent uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      Unarchive
+                    </button>
+                  )}
+                  {type !== 'archived' && !canPub && !canArc && (
+                    <span className="px-2.5 py-1 bg-[var(--color-danger-soft)]/20 border border-[var(--color-danger)]/15 text-[var(--color-danger)] text-[9px] font-sans font-bold uppercase tracking-widest rounded-xl">
+                      Read Only
+                    </span>
+                  )}
+                  {type === 'archived' && !canUnarc && (
+                    <span className="px-2.5 py-1 bg-[var(--color-danger-soft)]/20 border border-[var(--color-danger)]/15 text-[var(--color-danger)] text-[9px] font-sans font-bold uppercase tracking-widest rounded-xl">
+                      Read Only
+                    </span>
                   )}
                 </div>
               </div>
@@ -258,6 +337,7 @@ const PublishingPage = () => {
         {activeTab === 'ready' && renderBookGrid(readyBooks, 'ready')}
         {activeTab === 'published' && renderBookGrid(publishedBooks, 'published')}
         {activeTab === 'blocked' && renderBookGrid(blockedBooks, 'blocked')}
+        {activeTab === 'archived' && renderBookGrid(archivedBooks, 'archived')}
       </Card>
 
       {/* Live Metadata Trace console logs */}
@@ -307,6 +387,18 @@ const PublishingPage = () => {
         confirmVariant="danger"
         isLoading={archiveMutation.isPending}
       />
+
+      <ConfirmDialog
+        isOpen={confirmUnarchiveId !== null}
+        onClose={() => setConfirmUnarchiveId(null)}
+        onConfirm={handleUnarchiveConfirm}
+        title="Unarchive Catalog Record"
+        message="Unarchive this book? This will move the book back to the unpublished queue so it can be managed again."
+        confirmText="Unarchive Book"
+        confirmVariant="primary"
+        isLoading={unarchiveMutation.isPending}
+      />
+
     </div>
   );
 };

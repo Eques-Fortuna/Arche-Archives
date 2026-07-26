@@ -12,6 +12,7 @@ import {
   User
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { canRunAutomation } from '../../lib/auth';
 
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const location = useLocation();
@@ -128,14 +129,16 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
         {/* User profile & Action widget at bottom */}
         <div className="flex flex-col border-t border-[#DED2BE] bg-[#F1E7D6]">
           {/* Add New Collection button */}
-          <div className="p-4 border-b border-[#DED2BE]">
-            <button
-              onClick={() => window.dispatchEvent(new CustomEvent('open-register-book'))}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-[#2A473E] hover:bg-[#1E342D] text-[#FAF6EE] font-bold transition-all text-xs uppercase tracking-widest font-sans cursor-pointer shadow-sm"
-            >
-              + New Collection
-            </button>
-          </div>
+          {canRunAutomation(user) && (
+            <div className="p-4 border-b border-[#DED2BE]">
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('open-register-book'))}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-[#2A473E] hover:bg-[#1E342D] text-[#FAF6EE] font-bold transition-all text-xs uppercase tracking-widest font-sans cursor-pointer shadow-sm"
+              >
+                + New Collection
+              </button>
+            </div>
+          )}
 
           {/* User Widget */}
           <div className="p-4 flex items-center gap-3 bg-[#EAE0CD]">
@@ -202,17 +205,19 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
               </div>
             </nav>
 
-            <div className="border-t border-[#DED2BE] bg-[#EAE0CD] p-4">
-              <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  window.dispatchEvent(new CustomEvent('open-register-book'));
-                }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-[#2A473E] text-[#FAF6EE] font-bold text-xs uppercase tracking-widest font-sans"
-              >
-                + New Collection
-              </button>
-            </div>
+            {canRunAutomation(user) && (
+              <div className="border-t border-[#DED2BE] bg-[#EAE0CD] p-4">
+                <button
+                  onClick={() => {
+                    setMobileOpen(false);
+                    window.dispatchEvent(new CustomEvent('open-register-book'));
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded bg-[#2A473E] text-[#FAF6EE] font-bold text-xs uppercase tracking-widest font-sans"
+                >
+                  + New Collection
+                </button>
+              </div>
+            )}
           </aside>
         </div>
       )}

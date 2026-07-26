@@ -10,6 +10,8 @@ import {
   archiveBook
 } from '../../lib/api';
 import BookFilters from '../../components/books/BookFilters';
+import { useAuth } from '../../context/AuthContext';
+import { canRunAutomation } from '../../lib/auth';
 import BookTable from '../../components/books/BookTable';
 import UploadBookModal from '../../components/books/UploadBookModal';
 import Card from '../../components/ui/Card';
@@ -21,6 +23,7 @@ import EmptyState from '../../components/ui/EmptyState';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 const BooksPage = () => {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState('');
@@ -197,14 +200,16 @@ const BooksPage = () => {
             <SlidersHorizontal className="w-3.5 h-3.5" />
             {showFilters ? 'Advanced Filters' : 'Advanced Filters'}
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            Bulk Ingest
-          </Button>
+          {canRunAutomation(user) && (
+            <Button
+              variant="primary"
+              onClick={() => setIsUploadModalOpen(true)}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              Bulk Ingest
+            </Button>
+          )}
         </div>
       </div>
 

@@ -123,11 +123,7 @@ const PublicBookDetailPage = () => {
       title: ch.title || `Section ${i + 1}`,
       desc: ch.word_count ? `Word count: ${ch.word_count.toLocaleString()} words.` : 'Meticulously transcribed from manuscript.'
     };
-  }) : [
-    { range: 'Folio 01r - 12v', title: 'The Preparation of Salt', desc: 'Detailed list of reagents and heating durations required for initial sublimation.' },
-    { range: 'Folio 13r - 34v', title: 'Mercury Fixation', desc: 'Observations on the stasis of quicksilver under varying atmospheric pressures.' },
-    { range: 'Folio 35r - End', title: 'Lunar Observations', desc: 'A series of sketches and logs correlating chemical results with lunar cycles.' }
-  ];
+  }) : [];
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full space-y-8 bg-[#FAF6EE] text-[var(--color-ink)] font-sans text-left">
@@ -164,9 +160,9 @@ const PublicBookDetailPage = () => {
               />
             ) : (
               <div className="space-y-4 text-center p-6">
-                <BookOpen className="w-16 h-16 text-[var(--color-archive-green)]/35 mx-auto" />
-                <span className="px-2 py-0.5 rounded bg-[var(--color-archive-green-soft)] border border-[var(--color-border)] text-[9px] font-bold text-[var(--color-archive-green)] uppercase tracking-widest">
-                  {book.work_type || 'Manuscript'}
+                <BookOpen className="w-16 h-16 text-[var(--color-muted-ink)]/35 mx-auto" />
+                <span className="px-2.5 py-0.5 rounded bg-[var(--color-panel)] border border-[var(--color-border)] text-[9px] font-bold text-[var(--color-muted-ink)] uppercase tracking-widest block max-w-max mx-auto">
+                  Cover Not Available
                 </span>
                 <h4 className="font-serif font-bold text-base text-[var(--color-ink)] max-w-[180px] leading-tight mx-auto">{book.title}</h4>
               </div>
@@ -325,29 +321,35 @@ const PublicBookDetailPage = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {foliosList.map((folio, i) => (
-            <div key={i} className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between hover:border-[var(--color-archive-green)] transition-all relative">
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-[10px] font-mono text-[var(--color-muted-ink)] font-bold">
-                  <span>{folio.range}</span>
-                  <FileText className="w-4 h-4 text-[var(--color-subtle-ink)]/30" />
+        {foliosList.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {foliosList.map((folio, i) => (
+              <div key={i} className="p-5 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col justify-between hover:border-[var(--color-archive-green)] transition-all relative text-left">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-[10px] font-mono text-[var(--color-muted-ink)] font-bold">
+                    <span>{folio.range}</span>
+                    <FileText className="w-4 h-4 text-[var(--color-subtle-ink)]/30" />
+                  </div>
+                  <h4 className="font-serif font-bold text-sm text-[var(--color-ink)] leading-tight">{folio.title}</h4>
+                  <p className="text-[11px] text-[var(--color-muted-ink)] leading-normal font-serif">{folio.desc}</p>
                 </div>
-                <h4 className="font-serif font-bold text-sm text-[var(--color-ink)] leading-tight">{folio.title}</h4>
-                <p className="text-[11px] text-[var(--color-muted-ink)] leading-normal font-serif">{folio.desc}</p>
+                <button
+                  onClick={() => toast.success(`Viewing Folio section: ${folio.title}`)}
+                  className="text-[9px] font-sans font-bold text-[var(--color-archive-green)] hover:underline uppercase tracking-widest text-left mt-5 cursor-pointer block"
+                >
+                  View Page →
+                </button>
+                <span className="absolute bottom-2 right-4 text-4xl font-serif text-[var(--color-border)]/20 select-none pointer-events-none font-bold">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
               </div>
-              <button
-                onClick={() => toast.success(`Viewing Folio section: ${folio.title}`)}
-                className="text-[9px] font-sans font-bold text-[var(--color-archive-green)] hover:underline uppercase tracking-widest text-left mt-5 cursor-pointer block"
-              >
-                View Page →
-              </button>
-              <span className="absolute bottom-2 right-4 text-4xl font-serif text-[var(--color-border)]/20 select-none pointer-events-none font-bold">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-8 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] text-center text-xs text-[var(--color-muted-ink)] font-serif w-full">
+            No chapter data available yet.
+          </div>
+        )}
       </div>
     </div>
   );

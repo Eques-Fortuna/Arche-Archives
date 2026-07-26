@@ -1,0 +1,216 @@
+import { http, HttpResponse } from 'msw';
+
+export const handlers = [
+  // Authentication
+  http.get('*/api/auth/me', () => {
+    return HttpResponse.json({
+      ok: true,
+      user: { name: 'John Public', email: 'john@example.com', role: 'user' }
+    });
+  }),
+
+  http.get('*/api/admin/auth/me', () => {
+    return HttpResponse.json({
+      ok: true,
+      user: { name: 'Admin Staff', email: 'admin@arche.com', role: 'admin' }
+    });
+  }),
+
+  http.post('*/api/auth/login', () => {
+    return HttpResponse.json({
+      ok: true,
+      access_token: 'mock-public-token',
+      user: { name: 'John Public', email: 'john@example.com', role: 'user' }
+    });
+  }),
+
+  http.post('*/api/admin/auth/login', () => {
+    return HttpResponse.json({
+      ok: true,
+      access_token: 'mock-admin-token',
+      user: { name: 'Admin Staff', email: 'admin@arche.com', role: 'admin' }
+    });
+  }),
+
+  http.post('*/api/auth/register', () => {
+    return HttpResponse.json({
+      ok: true,
+      message: 'User registered successfully'
+    });
+  }),
+
+  http.post('*/api/auth/logout', () => {
+    return HttpResponse.json({ ok: true });
+  }),
+
+  http.post('*/api/admin/auth/logout', () => {
+    return HttpResponse.json({ ok: true });
+  }),
+
+  // Public Catalog (Flat Array)
+  http.get('*/api/public/books', () => {
+    return HttpResponse.json([
+      {
+        book_id: '1',
+        title: 'The Hamlet',
+        author: 'William Faulkner',
+        slug: 'the-hamlet',
+        original_publication_year: 1940
+      }
+    ]);
+  }),
+
+  // Public Book Details (Flat Object)
+  http.get('*/api/public/books/:slug', ({ params }) => {
+    return HttpResponse.json({
+      book_id: '1',
+      title: 'The Hamlet',
+      author: 'William Faulkner',
+      slug: params.slug,
+      original_publication_year: 1940,
+      text_status: 'approved',
+      cover_status: 'approved',
+      rights_status: 'verified',
+      current_stage: 'published'
+    });
+  }),
+
+  http.get('*/api/public/books/:slug/downloads', ({ params }) => {
+    return HttpResponse.json({
+      ok: true,
+      download_url: `https://NYC3.digitaloceanspaces.com/completed/${params.slug}/${params.slug}.pdf?token=123`
+    });
+  }),
+
+  // Admin Catalog & Telemetry (Flat Array)
+  http.get('*/api/admin/books', () => {
+    return HttpResponse.json([
+      {
+        book_id: '1',
+        title: 'The Hamlet',
+        author: 'William Faulkner',
+        slug: 'the-hamlet',
+        current_stage: 'cover_approved',
+        stage_status: 'complete',
+        text_status: 'approved',
+        cover_status: 'approved',
+        rights_status: 'verified',
+        publication_status: 'draft'
+      }
+    ]);
+  }),
+
+  // Admin Book Details (Flat Object)
+  http.get('*/api/admin/books/:id', ({ params }) => {
+    return HttpResponse.json({
+      book_id: params.id,
+      title: 'The Hamlet',
+      author: 'William Faulkner',
+      slug: 'the-hamlet',
+      current_stage: 'cover_review',
+      stage_status: 'pending',
+      text_status: 'approved',
+      cover_status: 'pending',
+      rights_status: 'pending'
+    });
+  }),
+
+  http.get('*/api/admin/books/:id/files', () => {
+    return HttpResponse.json({ ok: true, files: [] });
+  }),
+
+  http.get('*/api/admin/books/:id/qc', () => {
+    return HttpResponse.json({ ok: true, qc: {} });
+  }),
+
+  http.get('*/api/admin/books/:id/render-reports', () => {
+    return HttpResponse.json({ ok: true, reports: [] });
+  }),
+
+  http.get('*/api/admin/books/:id/approvals', () => {
+    return HttpResponse.json({ ok: true, approvals: {} });
+  }),
+
+  http.get('*/api/admin/recovery', () => {
+    return HttpResponse.json({ ok: true, items: [] });
+  }),
+
+  // Review queues
+  http.get('*/api/admin/review-queue/text', () => {
+    return HttpResponse.json([
+      {
+        book_id: '1',
+        title: 'The Hamlet',
+        author: 'William Faulkner',
+        slug: 'the-hamlet',
+        current_stage: 'text_review',
+        text_status: 'pending'
+      }
+    ]);
+  }),
+
+  http.get('*/api/admin/review-queue/covers', () => {
+    return HttpResponse.json([
+      {
+        book_id: '1',
+        title: 'The Hamlet',
+        author: 'William Faulkner',
+        slug: 'the-hamlet',
+        current_stage: 'cover_review',
+        cover_status: 'pending'
+      }
+    ]);
+  }),
+
+  http.get('*/api/admin/review-queue/rights', () => {
+    return HttpResponse.json([
+      {
+        book_id: '1',
+        title: 'The Hamlet',
+        author: 'William Faulkner',
+        slug: 'the-hamlet',
+        current_stage: 'rights_review',
+        rights_status: 'pending'
+      }
+    ]);
+  }),
+
+  // Ingest/Pipeline Trigger
+  http.get('*/api/admin/pipeline/eligible', () => {
+    return HttpResponse.json({
+      ok: true,
+      books: [
+        {
+          book_id: '1',
+          title: 'The Hamlet',
+          author: 'William Faulkner'
+        }
+      ]
+    });
+  }),
+
+  http.post('*/api/admin/pipeline/run-phase/:phase', ({ params }) => {
+    return HttpResponse.json({
+      ok: true,
+      triggered: true,
+      triggered_phase: parseInt(params.phase, 10),
+      message: 'Pipeline batch trigger successfully processed!'
+    });
+  }),
+
+  http.post('*/api/admin/books/:id/run-next-phase', () => {
+    return HttpResponse.json({ ok: true });
+  }),
+
+  http.post('*/api/admin/books/:id/retry', () => {
+    return HttpResponse.json({ ok: true });
+  }),
+
+  http.post('*/api/admin/books/:id/archive', () => {
+    return HttpResponse.json({ ok: true });
+  }),
+
+  http.post('*/api/admin/books/:id/unarchive', () => {
+    return HttpResponse.json({ ok: true });
+  })
+];

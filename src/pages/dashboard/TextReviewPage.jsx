@@ -9,13 +9,14 @@ import {
   getFileSignedUrl
 } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { canReviewText } from '../../lib/auth';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorState from '../../components/ui/ErrorState';
 import EmptyState from '../../components/ui/EmptyState';
 import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { Clock, FileDown, AlertTriangle } from 'lucide-react';
+import { Clock, FileDown, AlertTriangle, ShieldAlert } from 'lucide-react';
 
 const TextReviewPage = () => {
   const queryClient = useQueryClient();
@@ -166,8 +167,8 @@ const TextReviewPage = () => {
   if (books.length === 0) {
     return (
       <EmptyState
-        title="Review Queue Clear"
-        description="There are no books currently awaiting text composition review."
+        title="No books waiting for text review."
+        description=""
       />
     );
   }
@@ -301,52 +302,63 @@ const TextReviewPage = () => {
             </div>
 
             {/* Review Notes Form */}
-            <div className="space-y-1.5">
-              <span className="text-[9px] text-[var(--color-muted-ink)] font-bold uppercase tracking-widest block">Reviewer Notes</span>
-              <textarea
-                placeholder="Draft your editorial feedback here..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={4}
-                className="w-full p-3 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-ink)] placeholder-[var(--color-muted-ink)]/60 focus:outline-none focus:border-[var(--color-archive-green)] transition-all font-sans"
-              />
-            </div>
+            {canReviewText(currentUser) && (
+              <div className="space-y-1.5">
+                <span className="text-[9px] text-[var(--color-muted-ink)] font-bold uppercase tracking-widest block">Reviewer Notes</span>
+                <textarea
+                  placeholder="Draft your editorial feedback here..."
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={4}
+                  className="w-full p-3 bg-[var(--color-panel)] border border-[var(--color-border)] rounded-xl text-xs text-[var(--color-ink)] placeholder-[var(--color-muted-ink)]/60 focus:outline-none focus:border-[var(--color-archive-green)] transition-all font-sans"
+                />
+              </div>
+            )}
           </div>
 
           {/* Action triggers matching Google Stitch mockup */}
-          <div className="pt-4 border-t border-[var(--color-border)] space-y-2.5">
-            <button
-              onClick={() => handleTriggerAction('approve')}
-              disabled={actionMutation.isPending}
-              className="w-full flex flex-col items-center justify-center p-3 border border-[var(--color-success)] hover:bg-[var(--color-success-soft)] text-[var(--color-success)] rounded-xl transition-all cursor-pointer shadow-sm"
-            >
-              <span className="text-xs font-bold uppercase tracking-widest font-sans">Approve Text</span>
-              <span className="text-[8px] text-[var(--color-muted-ink)] uppercase tracking-wider font-semibold mt-0.5">Commit to Archive</span>
-            </button>
-            
-            <button
-              onClick={() => handleTriggerAction('needs_changes')}
-              disabled={actionMutation.isPending}
-              className="w-full flex flex-col items-center justify-center p-3 border border-[var(--color-warning)] hover:bg-[var(--color-warning-soft)] text-[var(--color-warning)] rounded-xl transition-all cursor-pointer shadow-sm"
-            >
-              <span className="text-xs font-bold uppercase tracking-widest font-sans">Request Changes</span>
-              <span className="text-[8px] text-[var(--color-muted-ink)] uppercase tracking-wider font-semibold mt-0.5">Revert to Scholar</span>
-            </button>
-
-            <button
-              onClick={() => handleTriggerAction('reject')}
-              disabled={actionMutation.isPending}
-              className="w-full flex flex-col items-center justify-center p-3 border border-[var(--color-danger)] hover:bg-[var(--color-danger-soft)] text-[var(--color-danger)] rounded-xl transition-all cursor-pointer shadow-sm"
-            >
-              <span className="text-xs font-bold uppercase tracking-widest font-sans">Reject Text</span>
-              <span className="text-[8px] text-[var(--color-muted-ink)] uppercase tracking-wider font-semibold mt-0.5">Permanent Expunge</span>
-            </button>
-
-            <div className="text-[9px] text-[var(--color-muted-ink)] font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 pt-2">
-              <Clock className="w-3 h-3 text-[var(--color-success)]" />
-              <span className="font-bold">SLA: 4h 22m remaining</span>
+          {!canReviewText(currentUser) ? (
+            <div className="pt-4 border-t border-[var(--color-border)] text-center py-6 space-y-2">
+              <div className="p-3 bg-[var(--color-danger-soft)]/20 border border-[var(--color-danger)]/15 text-[var(--color-danger)] rounded-xl text-xs flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span>Read-only: Text queue reviews are restricted.</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="pt-4 border-t border-[var(--color-border)] space-y-2.5">
+              <button
+                onClick={() => handleTriggerAction('approve')}
+                disabled={actionMutation.isPending}
+                className="w-full flex flex-col items-center justify-center p-3 border border-[var(--color-success)] hover:bg-[var(--color-success-soft)] text-[var(--color-success)] rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                <span className="text-xs font-bold uppercase tracking-widest font-sans">Approve Text</span>
+                <span className="text-[8px] text-[var(--color-muted-ink)] uppercase tracking-wider font-semibold mt-0.5">Commit to Archive</span>
+              </button>
+              
+              <button
+                onClick={() => handleTriggerAction('needs_changes')}
+                disabled={actionMutation.isPending}
+                className="w-full flex flex-col items-center justify-center p-3 border border-[var(--color-warning)] hover:bg-[var(--color-warning-soft)] text-[var(--color-warning)] rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                <span className="text-xs font-bold uppercase tracking-widest font-sans">Request Changes</span>
+                <span className="text-[8px] text-[var(--color-muted-ink)] uppercase tracking-wider font-semibold mt-0.5">Revert to Scholar</span>
+              </button>
+
+              <button
+                onClick={() => handleTriggerAction('reject')}
+                disabled={actionMutation.isPending}
+                className="w-full flex flex-col items-center justify-center p-3 border border-[var(--color-danger)] hover:bg-[var(--color-danger-soft)] text-[var(--color-danger)] rounded-xl transition-all cursor-pointer shadow-sm"
+              >
+                <span className="text-xs font-bold uppercase tracking-widest font-sans">Reject Text</span>
+                <span className="text-[8px] text-[var(--color-muted-ink)] uppercase tracking-wider font-semibold mt-0.5">Permanent Expunge</span>
+              </button>
+
+              <div className="text-[9px] text-[var(--color-muted-ink)] font-mono uppercase tracking-wider flex items-center justify-center gap-1.5 pt-2">
+                <Clock className="w-3 h-3 text-[var(--color-success)]" />
+                <span className="font-bold">SLA: 4h 22m remaining</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -68,7 +68,7 @@ const PublicBooksPage = () => {
   }, [data, search, typeFilter, langFilter, isLoading, error]);
 
   // Paginated elements
-  const itemsPerPage = 7; // Leaving 1 spot for the mockup placeholder card!
+  const itemsPerPage = 8;
   const totalPages = Math.ceil(filteredBooks.length / itemsPerPage) || 1;
   const currentPage = Math.min(page, totalPages);
 
@@ -165,16 +165,6 @@ const PublicBooksPage = () => {
               <PublicBookCard key={book.book_id || book.id} book={book} />
             ))}
 
-            {/* Dynamic catalog placeholder card from mockup 4 */}
-            {paginatedBooks.length < 8 && (
-              <div className="border border-dashed border-[var(--color-border)] rounded-2xl p-6 bg-[var(--color-panel)]/40 flex flex-col items-center justify-center text-center gap-3 select-none h-full min-h-[380px]">
-                <BookOpen className="w-10 h-10 text-[var(--color-subtle-ink)]/25" />
-                <div>
-                  <h4 className="font-serif font-bold text-sm text-[var(--color-muted-ink)] leading-tight">Restoring Catalog</h4>
-                  <span className="text-[10px] text-[var(--color-subtle-ink)] font-bold uppercase tracking-wider block mt-1">Available Fall 2026</span>
-                </div>
-              </div>
-            )}
           </div>
           
           {/* Mock Pagination styled exactly as shown in screenshot 4 */}
@@ -212,8 +202,8 @@ const PublicBooksPage = () => {
         </div>
       ) : (
         <EmptyState
-          title="No Books Found"
-          description="We couldn't find any published works matching your search parameters."
+          title={(!data || data.length === 0) ? "No published books available yet." : "No Books Found"}
+          description={(!data || data.length === 0) ? "" : "We couldn't find any published works matching your search parameters."}
         />
       )}
     </div>

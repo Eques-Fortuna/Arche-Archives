@@ -309,6 +309,15 @@ export const archiveBook = async (bookId) => {
 };
 
 /**
+ * Move book record back to active queues from archive
+ */
+export const unarchiveBook = async (bookId) => {
+  const response = await api.post(`/api/admin/books/${bookId}/unarchive`);
+  return response.data;
+};
+
+
+/**
  * Mark a recovery pipeline failed stage as ready to retry
  * @param {string} bookId
  * @param {Object} data - { notes }

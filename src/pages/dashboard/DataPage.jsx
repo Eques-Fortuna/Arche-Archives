@@ -110,7 +110,7 @@ const DataPage = () => {
         </Card>
       </div>
 
-      {/* Placeholder Buttons and Catalog Status */}
+          {/* Placeholder Buttons and Catalog Status */}
       <Card className="p-6 space-y-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
         <div>
           <h3 className="text-sm font-bold text-[var(--color-ink)] font-serif uppercase tracking-wider">Dataset Operations</h3>
@@ -120,30 +120,40 @@ const DataPage = () => {
         <div className="flex flex-wrap items-center gap-4">
           <Button
             variant="outline"
-            onClick={() => handleComingSoon('View Data Package')}
-            title="Coming soon"
-            className="text-[var(--color-subtle-ink)] border-[var(--color-border)] bg-[var(--color-panel)]/30 hover:bg-[var(--color-panel)] cursor-pointer"
+            disabled={true}
+            title="Not implemented yet"
+            className="text-[var(--color-subtle-ink)] border-[var(--color-border)] bg-[var(--color-panel)]/30 opacity-50 cursor-not-allowed"
           >
             View Data Package
           </Button>
 
           <Button
             variant="outline"
-            onClick={() => handleComingSoon('Package Data')}
-            title="Coming soon"
-            className="text-[var(--color-subtle-ink)] border-[var(--color-border)] bg-[var(--color-panel)]/30 hover:bg-[var(--color-panel)] cursor-pointer"
+            disabled={true}
+            title="Not implemented yet"
+            className="text-[var(--color-subtle-ink)] border-[var(--color-border)] bg-[var(--color-panel)]/30 opacity-50 cursor-not-allowed"
           >
             Package Data
           </Button>
 
           <Button
             variant="outline"
-            onClick={() => handleComingSoon('Search Chunks')}
-            title="Coming soon"
-            className="text-[var(--color-subtle-ink)] border-[var(--color-border)] bg-[var(--color-panel)]/30 hover:bg-[var(--color-panel)] cursor-pointer"
+            disabled={true}
+            title="Not implemented yet"
+            className="text-[var(--color-subtle-ink)] border-[var(--color-border)] bg-[var(--color-panel)]/30 opacity-50 cursor-not-allowed"
           >
             Search Chunks
           </Button>
+        </div>
+      </Card>
+
+      {/* Structured Data Packages empty state */}
+      <Card className="p-6 bg-[var(--color-surface)] border border-[var(--color-border)] shadow-sm">
+        <div className="text-sm font-bold text-[var(--color-ink)] font-serif uppercase tracking-wider border-b border-[var(--color-border)]/50 pb-2.5">
+          Structured Data Packages
+        </div>
+        <div className="py-12 text-center text-xs text-[var(--color-muted-ink)] font-serif">
+          No data packages available yet.
         </div>
       </Card>
     </div>

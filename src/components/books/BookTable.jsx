@@ -9,6 +9,8 @@ import StatusBadge from '../ui/StatusBadge';
 import Button from '../ui/Button';
 import { formatDate } from '../../lib/formatters';
 import { Play, RotateCcw, Archive, Eye } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { canRunAutomation, canRetry, canArchive } from '../../lib/auth';
 
 const PipelineProgressBar = ({ book }) => {
   const currentStage = String(book.current_stage || '').toLowerCase();
@@ -96,6 +98,11 @@ const PipelineProgressBar = ({ book }) => {
 };
 
 const BookTable = ({ books, onRunNextPhase, onRetry, onArchive }) => {
+  const { user } = useAuth();
+  const canRun = canRunAutomation(user);
+  const canRet = canRetry(user);
+  const canArc = canArchive(user);
+
   const columns = useMemo(
     () => [
       {
@@ -174,6 +181,22 @@ const BookTable = ({ books, onRunNextPhase, onRetry, onArchive }) => {
         header: 'Actions',
         cell: (info) => {
           const bookId = info.row.original.book_id;
+          
+          if (!canRun && !canRet && !canArc) {
+            return (
+              <div className="flex items-center gap-2">
+                <Link to={`/dashboard/books/${bookId}`} title="View Details">
+                  <Button variant="ghost" size="sm" className="p-1.5 h-9 w-9 rounded-xl hover:bg-[var(--color-panel)] transition-all">
+                    <Eye className="w-5 h-5 text-[var(--color-muted-ink)]" />
+                  </Button>
+                </Link>
+                <span className="text-[9px] uppercase font-bold text-[var(--color-muted-ink)] tracking-wider">
+                  Read Only
+                </span>
+              </div>
+            );
+          }
+
           return (
             <div className="flex items-center gap-2">
               <Link to={`/dashboard/books/${bookId}`} title="View Details">
@@ -181,39 +204,45 @@ const BookTable = ({ books, onRunNextPhase, onRetry, onArchive }) => {
                   <Eye className="w-5 h-5 text-[var(--color-muted-ink)]" />
                 </Button>
               </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-1.5 h-9 w-9 rounded-xl hover:bg-[var(--color-panel)] transition-all"
-                onClick={() => onRunNextPhase(bookId)}
-                title="Run Next Phase"
-              >
-                <Play className="w-5 h-5 text-[var(--color-success)]" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-1.5 h-9 w-9 rounded-xl hover:bg-[var(--color-panel)] transition-all"
-                onClick={() => onRetry(bookId)}
-                title="Retry Stage"
-              >
-                <RotateCcw className="w-5 h-5 text-[var(--color-warning)]" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-1.5 h-9 w-9 rounded-xl hover:bg-[var(--color-panel)] transition-all"
-                onClick={() => onArchive(bookId)}
-                title="Archive Book"
-              >
-                <Archive className="w-5 h-5 text-[var(--color-danger)]" />
-              </Button>
+              {canRun && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-1.5 h-9 w-9 rounded-xl hover:bg-[var(--color-panel)] transition-all"
+                  onClick={() => onRunNextPhase(bookId)}
+                  title="Run Next Phase"
+                >
+                  <Play className="w-5 h-5 text-[var(--color-success)]" />
+                </Button>
+              )}
+              {canRet && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-1.5 h-9 w-9 rounded-xl hover:bg-[var(--color-panel)] transition-all"
+                  onClick={() => onRetry(bookId)}
+                  title="Retry Stage"
+                >
+                  <RotateCcw className="w-5 h-5 text-[var(--color-warning)]" />
+                </Button>
+              )}
+              {canArc && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-1.5 h-9 w-9 rounded-xl hover:bg-[var(--color-panel)] transition-all"
+                  onClick={() => onArchive(bookId)}
+                  title="Archive Book"
+                >
+                  <Archive className="w-5 h-5 text-[var(--color-danger)]" />
+                </Button>
+              )}
             </div>
           );
         },
       },
     ],
-    [onRunNextPhase, onRetry, onArchive]
+    [onRunNextPhase, onRetry, onArchive, user, canRun, canRet, canArc]
   );
 
   const table = useReactTable({

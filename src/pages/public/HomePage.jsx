@@ -14,17 +14,8 @@ const HomePage = () => {
 
   const latestBooks = React.useMemo(() => {
     const list = Array.isArray(booksData) ? booksData : [];
-    // Fallback static items if DB is currently empty for testing
-    if (list.length === 0) {
-      return [
-        { book_id: '1', title: 'The Alchemist', author: 'Paulo Coelho', publication_year: 1988, slug: 'the-alchemist', work_type: 'Philosophy', description: 'A fable about following your dream.' },
-        { book_id: '2', title: 'Moby Dick', author: 'Herman Melville', publication_year: 1851, slug: 'moby-dick', work_type: 'Adventure', description: 'The voyage of the whaling ship Pequod.' },
-        { book_id: '3', title: 'The Odyssey', author: 'Homer', publication_year: '8th Century BC', slug: 'the-odyssey', work_type: 'Epic Poetry', description: 'The legendary journey of Odysseus.' },
-        { book_id: '4', title: 'Meditations', author: 'Marcus Aurelius', publication_year: '180 AD', slug: 'meditations', work_type: 'Philosophy', description: 'Personal writings of the Roman Emperor.' }
-      ];
-    }
     return list
-      .filter((b) => String(b.publication_status).toLowerCase() === 'published')
+      .filter((b) => String(b.publication_status).toLowerCase() === 'published' || String(b.publicationStatus).toLowerCase() === 'published')
       .slice(0, 4);
   }, [booksData]);
 
@@ -117,11 +108,17 @@ const HomePage = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {latestBooks.map((book) => (
-            <PublicBookCard key={book.book_id || book.id} book={book} />
-          ))}
-        </div>
+        {latestBooks.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {latestBooks.map((book) => (
+              <PublicBookCard key={book.book_id || book.id} book={book} />
+            ))}
+          </div>
+        ) : (
+          <div className="p-8 rounded-2xl border border-[#DED2BE] bg-[#FFFDF8] text-center text-xs text-[#5F5A52] font-serif select-none w-full">
+            No public releases yet.
+          </div>
+        )}
       </div>
 
       {/* Compliance / Partner Badges */}

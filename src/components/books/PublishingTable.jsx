@@ -7,13 +7,15 @@ import {
 } from '@tanstack/react-table';
 import StatusBadge from '../ui/StatusBadge';
 import Button from '../ui/Button';
-import { Globe, ShieldAlert, Archive, Eye } from 'lucide-react';
+import { Globe, ShieldAlert, Archive, Eye, RotateCcw } from 'lucide-react';
 
 const PublishingTable = ({
   data = [],
   onPublish,
   onUnpublish,
   onArchive,
+  onUnarchive,
+  canUnarchive = false,
 }) => {
   const columns = useMemo(
     () => [
@@ -91,7 +93,7 @@ const PublishingTable = ({
           const textApproved = String(book.text_status).toLowerCase() === 'approved';
           const coverApproved = String(book.cover_status).toLowerCase() === 'approved';
           const rightsVerified = String(book.rights_status).toLowerCase() === 'verified' || String(book.rights_status).toLowerCase() === 'approved';
-          const canPublish = textApproved && coverApproved && rightsVerified && !isPublished;
+          const canPublish = textApproved && coverApproved && rightsVerified && !isPublished && pubStatus !== 'archived';
 
           return (
             <div className="flex items-center gap-1.5 justify-end">
@@ -136,12 +138,24 @@ const PublishingTable = ({
                   <Archive className="w-3.5 h-3.5 text-[var(--color-danger)]" />
                 </Button>
               )}
+
+              {pubStatus === 'archived' && canUnarchive && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="p-1 h-7 w-7 rounded-lg hover:bg-[var(--color-panel)] transition-all"
+                  onClick={() => onUnarchive(bookId)}
+                  title="Unarchive Book"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-[var(--color-success)]" />
+                </Button>
+              )}
             </div>
           );
         },
       },
     ],
-    [onPublish, onUnpublish, onArchive]
+    [onPublish, onUnpublish, onArchive, onUnarchive, canUnarchive]
   );
 
   const table = useReactTable({

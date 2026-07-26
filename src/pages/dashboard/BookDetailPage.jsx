@@ -32,6 +32,7 @@ import HumanCoverUploadModal from '../../components/review/HumanCoverUploadModal
 
 // Context
 import { useAuth } from '../../context/AuthContext';
+import { canRunAutomation, canManualOverride, canUploadHumanCover } from '../../lib/auth';
 
 // Components
 import Card from '../../components/ui/Card';
@@ -285,10 +286,11 @@ const BookDetailPage = () => {
                       book.rights_status === 'verified' &&
                       book.data_status !== 'packaged';
 
-  const canTrigger = user?.role === 'admin' || user?.role === 'operator';
+  const canTrigger = canRunAutomation(user);
+  const canOverride = canManualOverride(user);
   const isArchived = book.current_stage === 'archived';
   const isCoverApproved = book.cover_status === 'approved' || book.current_stage === 'cover_approved';
-  const isRoleEligible = user?.role === 'admin' || user?.role === 'operator' || user?.role === 'cover_reviewer';
+  const isRoleEligible = canUploadHumanCover(user);
 
   const showHumanCoverOption = 
     !isArchived &&
@@ -526,39 +528,41 @@ const BookDetailPage = () => {
             )}
 
             {/* Manual Stage Override / Reset Stage */}
-            <form onSubmit={handleResetStage} className="pt-4 border-t border-[#DED2BE] space-y-3">
-              <span className="text-[9px] text-[#5F5A52] font-bold uppercase tracking-widest block font-sans">
-                Manual Stage Override / Reset
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Select
-                  label="Target Stage"
-                  options={STAGE_OPTIONS}
-                  value={resetStage}
-                  onChange={(e) => setResetStage(e.target.value)}
-                  placeholder="Select Stage..."
-                  size="sm"
-                />
-                <Select
-                  label="Target Status"
-                  options={STATUS_OPTIONS}
-                  value={resetStatus}
-                  onChange={(e) => setResetStatus(e.target.value)}
-                  size="sm"
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  variant="secondary"
-                  type="submit"
-                  disabled={resetMutation.isPending}
-                  size="sm"
-                  className="text-[10px]"
-                >
-                  Apply Override
-                </Button>
-              </div>
-            </form>
+            {canOverride && (
+              <form onSubmit={handleResetStage} className="pt-4 border-t border-[#DED2BE] space-y-3">
+                <span className="text-[9px] text-[#5F5A52] font-bold uppercase tracking-widest block font-sans">
+                  Manual Stage Override / Reset
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Select
+                    label="Target Stage"
+                    options={STAGE_OPTIONS}
+                    value={resetStage}
+                    onChange={(e) => setResetStage(e.target.value)}
+                    placeholder="Select Stage..."
+                    size="sm"
+                  />
+                  <Select
+                    label="Target Status"
+                    options={STATUS_OPTIONS}
+                    value={resetStatus}
+                    onChange={(e) => setResetStatus(e.target.value)}
+                    size="sm"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    variant="secondary"
+                    type="submit"
+                    disabled={resetMutation.isPending}
+                    size="sm"
+                    className="text-[10px]"
+                  >
+                    Apply Override
+                  </Button>
+                </div>
+              </form>
+            )}
           </Card>
 
           {/* Action Checklist */}

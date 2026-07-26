@@ -39,6 +39,27 @@ export const isAdmin = (user) => {
 };
 
 /**
+ * Checks if the user holds operator rights
+ */
+export const isOperator = (user) => {
+  return user?.role === 'operator';
+};
+
+/**
+ * Checks if the user holds viewer rights
+ */
+export const isViewer = (user) => {
+  return user?.role === 'viewer';
+};
+
+/**
+ * Checks if the user is one of the queue reviewers
+ */
+export const isReviewer = (user) => {
+  return ['text_reviewer', 'cover_reviewer', 'rights_reviewer'].includes(user?.role);
+};
+
+/**
  * Checks if the user is a public reader account
  */
 export const isPublicUser = (user) => {
@@ -50,6 +71,49 @@ export const isPublicUser = (user) => {
  */
 export const isAdminUser = (user) => {
   return user?.account_type === 'admin' || ['admin', 'operator', 'text_reviewer', 'cover_reviewer', 'rights_reviewer', 'viewer'].includes(user?.role);
+};
+
+/**
+ * Checks if user is permitted to trigger pipeline phase runs
+ */
+export const canRunAutomation = (user) => {
+  return ['admin', 'operator'].includes(user?.role);
+};
+
+/**
+ * Checks if user is permitted to trigger retry actions on failed stages
+ */
+export const canRetry = (user) => {
+  return ['admin', 'operator'].includes(user?.role);
+};
+
+/**
+ * Checks if user is permitted to archive books
+ */
+export const canArchive = (user) => {
+  return user?.role === 'admin';
+};
+
+/**
+ * Checks if user is permitted to unarchive books
+ */
+export const canUnarchive = (user) => {
+  return user?.role === 'admin';
+};
+
+
+/**
+ * Checks if user is permitted to publish/unpublish books
+ */
+export const canPublish = (user) => {
+  return user?.role === 'admin';
+};
+
+/**
+ * Checks if user is permitted to manually override stage/status
+ */
+export const canManualOverride = (user) => {
+  return user?.role === 'admin';
 };
 
 /**
@@ -74,8 +138,9 @@ export const canReviewRights = (user) => {
 };
 
 /**
- * Checks if user is permitted to publish datasets / catalog items
+ * Checks if user is permitted to upload direct custom human covers
  */
-export const canPublish = (user) => {
-  return ['admin', 'operator'].includes(user?.role);
+export const canUploadHumanCover = (user) => {
+  return ['admin', 'operator', 'cover_reviewer'].includes(user?.role);
 };
+

@@ -8,11 +8,13 @@ import Textarea from '../ui/Textarea';
 import Select from '../ui/Select';
 import Card from '../ui/Card';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import { canReviewRights } from '../../lib/auth';
 
 /**
  * Reusable rights verification form component with sign-off validations
  */
 const RightsReviewForm = ({ book, currentUser, onAction, isPending }) => {
+  const canReview = canReviewRights(currentUser);
   const [confirmAction, setConfirmAction] = useState(null); // 'approve' | 'reject'
   const [rejectNotes, setRejectNotes] = useState('');
 
@@ -95,6 +97,7 @@ const RightsReviewForm = ({ book, currentUser, onAction, isPending }) => {
             <Input
               label="Source Name"
               placeholder="e.g. Project Gutenberg"
+              disabled={!canReview}
               {...register('source_name', { required: 'Source name is required' })}
               error={errors.source_name?.message}
             />
@@ -102,6 +105,7 @@ const RightsReviewForm = ({ book, currentUser, onAction, isPending }) => {
             <Input
               label="Source URL"
               placeholder="e.g. https://gutenberg.org/..."
+              disabled={!canReview}
               {...register('source_url', { 
                 required: 'Source URL is required',
                 pattern: {
@@ -118,12 +122,14 @@ const RightsReviewForm = ({ book, currentUser, onAction, isPending }) => {
               label="Original Publication Year"
               type="number"
               placeholder="e.g. 1879"
+              disabled={!canReview}
               {...register('original_publication_year')}
             />
 
             <Select
               label="Public Domain Status"
               options={[{ value: 'verified', label: 'Verified' }]}
+              disabled={!canReview}
               {...register('public_domain_status')}
             />
           </div>
@@ -131,6 +137,7 @@ const RightsReviewForm = ({ book, currentUser, onAction, isPending }) => {
           <Textarea
             label="Public Domain Reason"
             placeholder="Explain why this book fits into the public domain (e.g. author died > 70 years ago)..."
+            disabled={!canReview}
             {...register('public_domain_reason', { required: 'Public domain explanation is required' })}
             error={errors.public_domain_reason?.message}
             rows={2}
@@ -139,6 +146,7 @@ const RightsReviewForm = ({ book, currentUser, onAction, isPending }) => {
           <Textarea
             label="Rights Clearance Notes"
             placeholder="Document copyright audits or license check details..."
+            disabled={!canReview}
             {...register('rights_notes', { required: 'Clearance notes are required' })}
             error={errors.rights_notes?.message}
             rows={2}
@@ -147,59 +155,71 @@ const RightsReviewForm = ({ book, currentUser, onAction, isPending }) => {
           <Textarea
             label="Jurisdiction Notes"
             placeholder="e.g. Valid in the United States..."
+            disabled={!canReview}
             {...register('jurisdiction_notes')}
             rows={2}
           />
 
-          {/* Sign-off checklist checkbox */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[var(--color-panel)] border border-[var(--color-border)]">
-              <input
-                type="checkbox"
-                id="sign_off"
-                {...register('sign_off', { required: 'You must sign off to approve rights' })}
-                className="w-4 h-4 text-[var(--color-archive-green)] border-[var(--color-border)] rounded focus:ring-[var(--color-archive-green)]/20 cursor-pointer"
-              />
-              <label htmlFor="sign_off" className="text-xs text-[var(--color-ink-soft)] cursor-pointer select-none">
-                I hereby sign off and verify that this book's content resides in the public domain and is cleared for release.
-              </label>
+          {!canReview ? (
+            <div className="pt-4 border-t border-[var(--color-border)] text-center py-4 space-y-2">
+              <div className="p-3 bg-[var(--color-danger-soft)]/20 border border-[var(--color-danger)]/15 text-[var(--color-danger)] rounded-xl text-xs flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span>Read-only: Rights clearance audits are restricted.</span>
+              </div>
             </div>
-            {errors.sign_off && (
-              <span className="text-[10px] text-[var(--color-danger)] block mt-0.5 px-1">{errors.sign_off.message}</span>
-            )}
-          </div>
+          ) : (
+            <>
+              {/* Sign-off checklist checkbox */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[var(--color-panel)] border border-[var(--color-border)]">
+                  <input
+                    type="checkbox"
+                    id="sign_off"
+                    {...register('sign_off', { required: 'You must sign off to approve rights' })}
+                    className="w-4 h-4 text-[var(--color-archive-green)] border-[var(--color-border)] rounded focus:ring-[var(--color-archive-green)]/20 cursor-pointer"
+                  />
+                  <label htmlFor="sign_off" className="text-xs text-[var(--color-ink-soft)] cursor-pointer select-none">
+                    I hereby sign off and verify that this book's content resides in the public domain and is cleared for release.
+                  </label>
+                </div>
+                {errors.sign_off && (
+                  <span className="text-[10px] text-[var(--color-danger)] block mt-0.5 px-1">{errors.sign_off.message}</span>
+                )}
+              </div>
 
-          {/* Rejection comments box */}
-          <div className="pt-4 border-t border-[var(--color-border)] space-y-2">
-            <Textarea
-              label="Rejection Reason"
-              placeholder="Provide details if rejecting rights..."
-              value={rejectNotes}
-              onChange={(e) => setRejectNotes(e.target.value)}
-              rows={2}
-            />
-          </div>
+              {/* Rejection comments box */}
+              <div className="pt-4 border-t border-[var(--color-border)] space-y-2">
+                <Textarea
+                  label="Rejection Reason"
+                  placeholder="Provide details if rejecting rights..."
+                  value={rejectNotes}
+                  onChange={(e) => setRejectNotes(e.target.value)}
+                  rows={2}
+                />
+              </div>
 
-          {/* Action triggers */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--color-border)]">
-            <Button
-              variant="danger"
-              type="button"
-              disabled={isPending}
-              onClick={() => handleTriggerAction('reject')}
-            >
-              <X className="w-4 h-4 mr-1.5" />
-              Reject Rights
-            </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={isPending}
-            >
-              <Check className="w-4 h-4 mr-1.5" />
-              Verify & Approve Rights
-            </Button>
-          </div>
+              {/* Action triggers */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--color-border)]">
+                <Button
+                  variant="danger"
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => handleTriggerAction('reject')}
+                >
+                  <X className="w-4 h-4 mr-1.5" />
+                  Reject Rights
+                </Button>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={isPending}
+                >
+                  <Check className="w-4 h-4 mr-1.5" />
+                  Verify & Approve Rights
+                </Button>
+              </div>
+            </>
+          )}
         </form>
       </div>
 
