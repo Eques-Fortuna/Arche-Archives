@@ -11,6 +11,21 @@ import Button from '../ui/Button';
 const BookFilesTable = ({ bookId, files = [] }) => {
   const [loadingFileId, setLoadingFileId] = useState(null);
 
+  const isHtmlFile = (file) => {
+    const mime = String(file.mime_type || '').toLowerCase();
+    const type = String(file.file_type || '').toLowerCase();
+    const path = String(file.storage_path || '').toLowerCase();
+    return mime === 'text/html' || type === 'html' || type === 'html_source' || path.endsWith('.html') || path.endsWith('.htm');
+  };
+
+  const displayFileType = (type) => {
+    const lowerType = String(type).toLowerCase();
+    if (lowerType === 'html_source' || lowerType === 'html') {
+      return 'HTML Source';
+    }
+    return String(type).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  };
+
   const handleFetchAndOpen = async (fileId) => {
     setLoadingFileId(fileId);
     toast.loading('Generating secure link...');
@@ -50,7 +65,7 @@ const BookFilesTable = ({ bookId, files = [] }) => {
                 <td className="px-6 py-4 align-middle font-bold text-[var(--color-ink)]">
                   <div className="flex items-center gap-2">
                     <File className="w-4 h-4 text-[var(--color-archive-green)]" />
-                    <span className="capitalize">{String(file.file_type).replace(/_/g, ' ')}</span>
+                    <span>{displayFileType(file.file_type)}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 align-middle font-mono text-xs text-[var(--color-muted-ink)] truncate max-w-[200px]" title={file.storage_path}>
@@ -60,19 +75,35 @@ const BookFilesTable = ({ bookId, files = [] }) => {
                 <td className="px-6 py-4 align-middle text-xs text-[var(--color-muted-ink)]">{formatDate(file.created_at)}</td>
                 <td className="px-6 py-4 align-middle text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={loadingFileId !== null}
-                      onClick={() => handleFetchAndOpen(file.file_id || file.id)}
-                    >
-                      {loadingFileId === (file.file_id || file.id) ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
-                      ) : (
-                        <Eye className="w-3.5 h-3.5 mr-1" />
-                      )}
-                      Preview
-                    </Button>
+                    {isHtmlFile(file) ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={loadingFileId !== null}
+                        onClick={() => handleFetchAndOpen(file.file_id || file.id)}
+                      >
+                        {loadingFileId === (file.file_id || file.id) ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        Download Source
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={loadingFileId !== null}
+                        onClick={() => handleFetchAndOpen(file.file_id || file.id)}
+                      >
+                        {loadingFileId === (file.file_id || file.id) ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5 mr-1" />
+                        )}
+                        Preview
+                      </Button>
+                    )}
                     <Button
                       variant="secondary"
                       size="sm"
