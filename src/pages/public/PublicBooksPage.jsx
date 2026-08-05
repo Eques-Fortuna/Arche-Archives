@@ -9,7 +9,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorState from '../../components/ui/ErrorState';
 import EmptyState from '../../components/ui/EmptyState';
 import Card from '../../components/ui/Card';
-import { Search, BookOpen } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 const PublicBooksPage = () => {
   const [search, setSearch] = useState('');
@@ -24,7 +24,6 @@ const PublicBooksPage = () => {
   });
 
   const filteredBooks = useMemo(() => {
-    // If backend returns data or data.items
     let list = [];
     if (data) {
       if (Array.isArray(data)) list = data;
@@ -32,30 +31,51 @@ const PublicBooksPage = () => {
       else if (Array.isArray(data.books)) list = data.books;
     }
 
+    // Filter to published books only
+    list = list.filter(
+      (b) =>
+        !b.publication_status ||
+        String(b.publication_status).toLowerCase() === 'published' ||
+        String(b.publicationStatus).toLowerCase() === 'published'
+    );
 
-
-    // Search keyword
+    // Search keyword matching title, author, description, keywords, or slug
     if (search.trim()) {
-      const q = search.toLowerCase();
+      const q = search.toLowerCase().trim();
       list = list.filter(
         (b) =>
           (b.title && b.title.toLowerCase().includes(q)) ||
-          (b.author && b.author.toLowerCase().includes(q))
+          (b.author && b.author.toLowerCase().includes(q)) ||
+          (b.description && b.description.toLowerCase().includes(q)) ||
+          (b.keywords && String(b.keywords).toLowerCase().includes(q)) ||
+          (b.slug && b.slug.toLowerCase().includes(q))
       );
     }
 
-    // Work type filter
+    // Genre / Work Type filter
     if (typeFilter) {
-      list = list.filter((b) => String(b.work_type).toLowerCase() === typeFilter.toLowerCase());
+      const tf = typeFilter.toLowerCase();
+      list = list.filter((b) => {
+        const wt = String(b.work_type || b.genre || b.category || '').toLowerCase();
+        return wt.includes(tf) || tf.includes(wt);
+      });
     }
 
-    // Language filter
+    // Language filter (e.g. 'en' for English, 'fr' for French, 'es' for Spanish, 'la' for Latin)
     if (langFilter) {
-      list = list.filter((b) => String(b.language || 'english').toLowerCase() === langFilter.toLowerCase());
+      const lf = langFilter.toLowerCase();
+      list = list.filter((b) => {
+        const lang = String(b.language || 'en').toLowerCase();
+        if (lf === 'en') return lang === 'en' || lang === 'english';
+        if (lf === 'fr') return lang === 'fr' || lang === 'french';
+        if (lf === 'es') return lang === 'es' || lang === 'spanish';
+        if (lf === 'la') return lang === 'la' || lang === 'latin';
+        return lang === lf || lang.includes(lf);
+      });
     }
 
     return list;
-  }, [data, search, typeFilter, langFilter, isLoading, error]);
+  }, [data, search, typeFilter, langFilter]);
 
   // Paginated elements
   const itemsPerPage = 8;
@@ -74,19 +94,34 @@ const PublicBooksPage = () => {
   };
 
   const TYPE_OPTIONS = [
-    { value: 'fiction', label: 'Fiction' },
-    { value: 'nonfiction', label: 'Non-Fiction' },
-    { value: 'technical', label: 'Technical' },
-    { value: 'philosophy', label: 'Philosophy' },
-    { value: 'science', label: 'Science' },
+    { value: 'novel', label: 'Novel' },
+    { value: 'play', label: 'Play' },
+    { value: 'poetry', label: 'Poetry' },
+    { value: 'essay', label: 'Essay' },
+    { value: 'drama', label: 'Drama' },
+    { value: 'prose', label: 'Prose' },
   ];
 
   const LANG_OPTIONS = [
-    { value: 'english', label: 'English' },
-    { value: 'french', label: 'French' },
-    { value: 'spanish', label: 'Spanish' },
-    { value: 'latin', label: 'Latin' },
+    { value: 'en', label: 'English' },
+    { value: 'fr', label: 'French' },
+    { value: 'es', label: 'Spanish' },
+    { value: 'la', label: 'Latin' },
   ];
+
+  if (isLoading) {
+    return <LoadingSpinner message="Retrieving public library catalog..." />;
+  }
+
+  if (error) {
+    return (
+      <ErrorState
+        title="Failed to Load Public Catalog"
+        description="Could not connect to the public library archives feed."
+        onRetry={refetch}
+      />
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full space-y-8 bg-[#FAF6EE] text-[var(--color-ink)] font-sans text-left">
@@ -101,7 +136,7 @@ const PublicBooksPage = () => {
         </p>
       </div>
 
-      {/* Filter panel mockup exactly as shown in screenshot 4 */}
+      {/* Filter panel */}
       <Card className="p-5 border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-xs">
           <div className="md:col-span-2 space-y-1">
@@ -154,46 +189,51 @@ const PublicBooksPage = () => {
             {paginatedBooks.map((book) => (
               <PublicBookCard key={book.book_id || book.id} book={book} />
             ))}
+          </div>
 
-          </div>
-          
-          {/* Mock Pagination styled exactly as shown in screenshot 4 */}
-          <div className="border-t border-[var(--color-border)] pt-6 flex items-center justify-center gap-6 text-xs select-none">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="font-bold text-[var(--color-muted-ink)] hover:text-[var(--color-archive-green)] disabled:opacity-40 uppercase tracking-widest cursor-pointer"
-            >
-              ← Previous Folio
-            </button>
-            <div className="flex items-center gap-2">
-              {Array.from({ length: totalPages }).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => handlePageChange(i + 1)}
-                  className={`w-7 h-7 flex items-center justify-center font-mono font-bold border transition-all rounded-xl cursor-pointer ${
-                    currentPage === i + 1
-                      ? 'bg-[var(--color-archive-green)] border-[var(--color-archive-green)] text-[var(--color-surface)] shadow-sm'
-                      : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-ink)] hover:bg-[var(--color-panel)]'
-                  }`}
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </button>
-              ))}
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="border-t border-[var(--color-border)] pt-6 flex items-center justify-center gap-6 text-xs select-none">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="font-bold text-[var(--color-muted-ink)] hover:text-[var(--color-archive-green)] disabled:opacity-40 uppercase tracking-widest cursor-pointer"
+              >
+                ← Previous Folio
+              </button>
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handlePageChange(i + 1)}
+                    className={`w-7 h-7 flex items-center justify-center font-mono font-bold border transition-all rounded-xl cursor-pointer ${
+                      currentPage === i + 1
+                        ? 'bg-[var(--color-archive-green)] border-[var(--color-archive-green)] text-[var(--color-surface)] shadow-sm'
+                        : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-ink)] hover:bg-[var(--color-panel)]'
+                    }`}
+                  >
+                    {String(i + 1).padStart(2, '0')}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="font-bold text-[var(--color-muted-ink)] hover:text-[var(--color-archive-green)] disabled:opacity-40 uppercase tracking-widest cursor-pointer"
+              >
+                Next Folio →
+              </button>
             </div>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="font-bold text-[var(--color-muted-ink)] hover:text-[var(--color-archive-green)] disabled:opacity-40 uppercase tracking-widest cursor-pointer"
-            >
-              Next Folio →
-            </button>
-          </div>
+          )}
         </div>
       ) : (
         <EmptyState
-          title={(!data || data.length === 0) ? "No published books available yet." : "No Books Found"}
-          description={(!data || data.length === 0) ? "" : "We couldn't find any published works matching your search parameters."}
+          title={search || typeFilter || langFilter ? "No Books Found" : "No published books available yet."}
+          description={
+            search || typeFilter || langFilter
+              ? "We couldn't find any published works matching your search parameters."
+              : "Check back soon as new restored volumes are added to the library."
+          }
         />
       )}
     </div>

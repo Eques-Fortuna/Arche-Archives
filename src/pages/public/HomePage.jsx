@@ -1,22 +1,42 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getPublicBooks } from '../../lib/api';
 import PublicBookCard from '../../components/public/PublicBookCard';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import { ArrowRight, Zap, Shield, Award, Compass } from 'lucide-react';
 
 const HomePage = () => {
   // Query latest books via public API
-  const { data: booksData } = useQuery({
+  const { data: booksData, isLoading } = useQuery({
     queryKey: ['publicLatestBooks'],
-    queryFn: () => getPublicBooks({ limit: 4 }),
+    queryFn: () => getPublicBooks(),
   });
 
-  const latestBooks = React.useMemo(() => {
-    const list = Array.isArray(booksData) ? booksData : [];
-    return list
-      .filter((b) => String(b.publication_status).toLowerCase() === 'published' || String(b.publicationStatus).toLowerCase() === 'published')
-      .slice(0, 4);
+  const latestBooks = useMemo(() => {
+    let list = [];
+    if (booksData) {
+      if (Array.isArray(booksData)) list = booksData;
+      else if (Array.isArray(booksData.items)) list = booksData.items;
+      else if (Array.isArray(booksData.books)) list = booksData.books;
+    }
+
+    // Filter to published books only
+    const published = list.filter(
+      (b) =>
+        !b.publication_status ||
+        String(b.publication_status).toLowerCase() === 'published' ||
+        String(b.publicationStatus).toLowerCase() === 'published'
+    );
+
+    // Sort by recent date if available, or take recent 3 books
+    const sorted = [...published].sort((a, b) => {
+      const dateA = new Date(a.published_at || a.created_at || a.updated_at || 0).getTime();
+      const dateB = new Date(b.published_at || b.created_at || b.updated_at || 0).getTime();
+      return dateB - dateA;
+    });
+
+    return sorted.slice(0, 3);
   }, [booksData]);
 
   return (
@@ -46,22 +66,22 @@ const HomePage = () => {
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            to="/login"
+            to="/books"
             className="flex items-center justify-center gap-2 px-8 py-3 rounded border border-[#2A473E] hover:bg-[#2A473E]/5 text-[#2A473E] font-bold text-xs uppercase tracking-widest transition-all duration-200 w-full sm:w-auto"
           >
-            The Restoration Process
+            Explore Catalog
           </Link>
         </div>
       </div>
 
-      {/* Center split info layout mapping image mockup 3 */}
+      {/* Scriptorium & Digital Alchemy Section */}
       <div className="max-w-6xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pt-8 border-t border-[#DED2BE]">
         {/* Left Column: Scriptorium Description */}
         <div className="space-y-6 text-left">
           <span className="text-[9px] text-[#5F5A52] font-bold uppercase tracking-widest block font-sans">The Scriptorium</span>
           <h2 className="text-3xl font-bold text-[#2A473E] font-serif leading-tight">Digital Alchemy</h2>
           <p className="text-sm text-[#5F5A52] font-serif leading-relaxed text-justify">
-            At the heart of Arche Archives lies <strong>The Scriptorium</strong>, a revolutionary suite of digital restoration tools designed to breathe life back into decaying texts without losing the soul of the original scribe. Our proprietary Digital Alchemy engine uses high-fidelity neural networks to isolate ink from paper, compensating for fading, water damage, and structural degradation.
+            At the heart of Arche Archives lies <strong>The Scriptorium</strong>, a revolutionary suite of digital preservation tools designed to breathe life back into decaying texts without losing the soul of the original scribe. Our proprietary Digital Alchemy engine uses high-fidelity neural networks to isolate ink from paper, compensating for fading, water damage, and structural degradation.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -92,7 +112,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Featured Releases Catalog Grid */}
+      {/* Featured Releases Catalog Grid (Showing recent 3 books) */}
       <div className="max-w-6xl mx-auto w-full space-y-8 pt-8 border-t border-[#DED2BE] text-left">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
@@ -108,15 +128,19 @@ const HomePage = () => {
           </Link>
         </div>
 
-        {latestBooks.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {isLoading ? (
+          <div className="py-12 flex justify-center items-center">
+            <LoadingSpinner message="Retrieving featured volumes..." />
+          </div>
+        ) : latestBooks.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {latestBooks.map((book) => (
               <PublicBookCard key={book.book_id || book.id} book={book} />
             ))}
           </div>
         ) : (
           <div className="p-8 rounded-2xl border border-[#DED2BE] bg-[#FFFDF8] text-center text-xs text-[#5F5A52] font-serif select-none w-full">
-            No public releases yet.
+            No public releases available yet.
           </div>
         )}
       </div>

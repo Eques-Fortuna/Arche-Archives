@@ -78,26 +78,6 @@ const PublicLayout = () => {
               >
                 Browse Catalog
               </Link>
-              {!isAuthenticated && (
-                <>
-                  <Link
-                    to="/register"
-                    className={`text-xs font-sans font-bold uppercase tracking-wider transition-colors ${
-                      isActive('/register') ? 'text-[#2A473E] border-b-2 border-[#2A473E] pb-1' : 'text-[#5F5A52] hover:text-[#2A473E]'
-                    }`}
-                  >
-                    Register
-                  </Link>
-                  <Link
-                    to="/admin/login"
-                    className={`text-xs font-sans font-bold uppercase tracking-wider transition-colors ${
-                      isActive('/admin/login') ? 'text-[#2A473E] border-b-2 border-[#2A473E] pb-1' : 'text-[#5F5A52] hover:text-[#2A473E]'
-                    }`}
-                  >
-                    Staff Login
-                  </Link>
-                </>
-              )}
             </nav>
 
             {/* Action Buttons */}
@@ -175,29 +155,6 @@ const PublicLayout = () => {
               >
                 Browse Catalog
               </Link>
-              
-              {!isAuthenticated && (
-                <>
-                  <Link
-                    to="/register"
-                    onClick={handleNavClick}
-                    className={`block px-4 py-2.5 rounded text-sm font-sans font-bold uppercase tracking-widest ${
-                      isActive('/register') ? 'bg-[#2A473E]/10 text-[#2A473E]' : 'text-[#5F5A52] hover:bg-[#FAF6EE] hover:text-[#1A1A1A]'
-                    }`}
-                  >
-                    Register
-                  </Link>
-                  <Link
-                    to="/admin/login"
-                    onClick={handleNavClick}
-                    className={`block px-4 py-2.5 rounded text-sm font-sans font-bold uppercase tracking-widest ${
-                      isActive('/admin/login') ? 'bg-[#2A473E]/10 text-[#2A473E]' : 'text-[#5F5A52] hover:bg-[#FAF6EE] hover:text-[#1A1A1A]'
-                    }`}
-                  >
-                    Staff Login
-                  </Link>
-                </>
-              )}
 
               <div className="pt-4 border-t border-[#DED2BE] px-4 pb-2 space-y-2">
                 {isAuthenticated ? (
