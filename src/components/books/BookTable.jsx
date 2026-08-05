@@ -248,6 +248,7 @@ const BookTable = ({ books, onRunNextPhase, onRetry, onArchive }) => {
   const table = useReactTable({
     data: books,
     columns,
+    getRowId: (row, index) => String(row.book_id || row.id || index),
     getCoreRowModel: getCoreRowModel(),
   });
 

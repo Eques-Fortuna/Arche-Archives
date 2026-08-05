@@ -11,15 +11,9 @@ const AdminLoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated as admin
-  if (isAuthenticated && isAdminUser) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -27,6 +21,11 @@ const AdminLoginPage = () => {
       password: '',
     },
   });
+
+  // Redirect if already authenticated as admin
+  if (isAuthenticated && isAdminUser) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -39,11 +38,6 @@ const AdminLoginPage = () => {
     } else {
       toast.error(res.error || 'Invalid operational credentials.');
     }
-  };
-
-  const handleQuickFill = () => {
-    setValue('email', 'admin@arche.com');
-    setValue('password', 'password123');
   };
 
   return (
@@ -144,29 +138,6 @@ const AdminLoginPage = () => {
           <Link to="/" className="text-[var(--color-muted-ink)] hover:underline font-bold">
             ← Back to Public Library
           </Link>
-        </div>
-
-        {/* Testing helper info */}
-        <div className="mt-8 pt-6 border-t border-[#DED2BE] space-y-3">
-          <div className="flex items-center justify-between text-[10px] text-[#5F5A52] font-semibold uppercase tracking-wider">
-            <span>Operator Quick Fill:</span>
-            <button
-              onClick={handleQuickFill}
-              className="text-[#2A473E] hover:underline font-bold"
-            >
-              Autofill Credentials
-            </button>
-          </div>
-          <div className="bg-[#FAF6EE] border border-[#DED2BE] rounded-xl p-3.5 space-y-1 text-xs font-sans text-left">
-            <div className="flex justify-between">
-              <span className="text-[#5F5A52]">Admin login:</span>
-              <span className="font-mono text-[#1A1A1A] font-bold">admin@arche.com</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#5F5A52]">Pass phrase:</span>
-              <span className="font-mono text-[#1A1A1A] font-bold">password123</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -14,15 +14,9 @@ const UserLoginPage = () => {
 
   const redirectUrl = searchParams.get('redirect') || '/books';
 
-  // Redirect if already authenticated as reader
-  if (isAuthenticated && isPublicUser) {
-    return <Navigate to={redirectUrl} replace />;
-  }
-
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -30,6 +24,11 @@ const UserLoginPage = () => {
       password: '',
     },
   });
+
+  // Redirect if already authenticated as reader
+  if (isAuthenticated && isPublicUser) {
+    return <Navigate to={redirectUrl} replace />;
+  }
 
   const onSubmit = async (data) => {
     setIsLoading(true);
@@ -42,11 +41,6 @@ const UserLoginPage = () => {
     } else {
       toast.error(res.error || 'Invalid credentials.');
     }
-  };
-
-  const handleQuickFill = () => {
-    setValue('email', 'reader@example.com');
-    setValue('password', 'password123');
   };
 
   return (
@@ -160,29 +154,6 @@ const UserLoginPage = () => {
           <Link to="/" className="text-[var(--color-subtle-ink)] hover:underline block mt-1">
             ← Back to Public Library
           </Link>
-        </div>
-
-        {/* Reader Autofill Helper for Testing */}
-        <div className="mt-8 pt-6 border-t border-[#DED2BE] space-y-3">
-          <div className="flex items-center justify-between text-[10px] text-[#5F5A52] font-semibold uppercase tracking-wider">
-            <span>Reader Quick Fill:</span>
-            <button
-              onClick={handleQuickFill}
-              className="text-[#2A473E] hover:underline font-bold"
-            >
-              Autofill Reader
-            </button>
-          </div>
-          <div className="bg-[#FAF6EE] border border-[#DED2BE] rounded-xl p-3.5 space-y-1 text-xs font-sans text-left">
-            <div className="flex justify-between">
-              <span className="text-[#5F5A52]">Reader login:</span>
-              <span className="font-mono text-[#1A1A1A] font-bold">reader@example.com</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[#5F5A52]">Password:</span>
-              <span className="font-mono text-[#1A1A1A] font-bold">password123</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

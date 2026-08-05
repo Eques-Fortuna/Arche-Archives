@@ -11,11 +11,6 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated
-  if (isAuthenticated && isPublicUser) {
-    return <Navigate to="/books" replace />;
-  }
-
   const {
     register,
     handleSubmit,
@@ -31,6 +26,11 @@ const RegisterPage = () => {
   });
 
   const password = watch('password');
+
+  // Redirect if already authenticated
+  if (isAuthenticated && isPublicUser) {
+    return <Navigate to="/books" replace />;
+  }
 
   const onSubmit = async (data) => {
     setIsLoading(true);

@@ -161,6 +161,7 @@ const PublishingTable = ({
   const table = useReactTable({
     data,
     columns,
+    getRowId: (row, index) => String(row.book_id || row.id || index),
     getCoreRowModel: getCoreRowModel(),
   });
 

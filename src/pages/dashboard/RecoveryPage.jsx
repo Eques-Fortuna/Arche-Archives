@@ -14,6 +14,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import RecoveryActionModal from '../../components/recovery/RecoveryActionModal';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorState from '../../components/ui/ErrorState';
+import EmptyState from '../../components/ui/EmptyState';
 import { Terminal, Clock, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { canRunAutomation, canRetry } from '../../lib/auth';
@@ -225,41 +226,48 @@ const RecoveryPage = () => {
               />
             </div>
 
-            <div className="overflow-x-auto w-full">
-              <table className="w-full border-collapse text-left text-sm text-[var(--color-ink)]">
-                <thead>
-                  <tr className="border-b border-[var(--color-border)] text-[10px] font-bold text-[var(--color-muted-ink)] uppercase tracking-wider">
-                    <th className="px-4 py-3 font-sans">Book Title</th>
-                    <th className="px-4 py-3 font-sans">Phase</th>
-                    <th className="px-4 py-3 font-sans">Error Type</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)]/40 text-xs">
-                  {finalRecoveryList.map((item) => (
-                    <tr
-                      key={item.book_id}
-                      onClick={() => setSelectedBookId(item.book_id)}
-                      className={`hover:bg-[var(--color-panel)]/30 transition-colors cursor-pointer ${
-                        activeItem?.book_id === item.book_id ? 'bg-[var(--color-panel)] font-bold' : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3.5 align-middle">
-                        <span className="font-serif block text-[var(--color-ink)]">{item.title}</span>
-                        <span className="text-[9px] text-[var(--color-subtle-ink)] font-mono block mt-0.5">ID: {item.book_id}</span>
-                      </td>
-                      <td className="px-4 py-3.5 align-middle font-sans text-[var(--color-muted-ink)] font-bold uppercase tracking-wider text-[10px]">
-                        {item.recovery_phase || item.current_stage || 'Structure'}
-                      </td>
-                      <td className="px-4 py-3.5 align-middle">
-                        <span className="px-2 py-0.5 bg-[var(--color-danger-soft)] border border-[var(--color-danger)]/20 text-[9px] font-bold text-[var(--color-danger)] uppercase tracking-widest rounded whitespace-nowrap">
-                          {item.error_type || 'JSON Mismatch'}
-                        </span>
-                      </td>
+            {finalRecoveryList.length > 0 ? (
+              <div className="overflow-x-auto w-full">
+                <table className="w-full border-collapse text-left text-sm text-[var(--color-ink)]">
+                  <thead>
+                    <tr className="border-b border-[var(--color-border)] text-[10px] font-bold text-[var(--color-muted-ink)] uppercase tracking-wider">
+                      <th className="px-4 py-3 font-sans">Book Title</th>
+                      <th className="px-4 py-3 font-sans">Phase</th>
+                      <th className="px-4 py-3 font-sans">Error Type</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--color-border)]/40 text-xs">
+                    {finalRecoveryList.map((item) => (
+                      <tr
+                        key={item.book_id}
+                        onClick={() => setSelectedBookId(item.book_id)}
+                        className={`hover:bg-[var(--color-panel)]/30 transition-colors cursor-pointer ${
+                          activeItem?.book_id === item.book_id ? 'bg-[var(--color-panel)] font-bold' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3.5 align-middle">
+                          <span className="font-serif block text-[var(--color-ink)]">{item.title}</span>
+                          <span className="text-[9px] text-[var(--color-subtle-ink)] font-mono block mt-0.5">ID: {item.book_id}</span>
+                        </td>
+                        <td className="px-4 py-3.5 align-middle font-sans text-[var(--color-muted-ink)] font-bold uppercase tracking-wider text-[10px]">
+                          {item.recovery_phase || item.current_stage || 'Unassigned'}
+                        </td>
+                        <td className="px-4 py-3.5 align-middle">
+                          <span className="px-2 py-0.5 bg-[var(--color-danger-soft)] border border-[var(--color-danger)]/20 text-[9px] font-bold text-[var(--color-danger)] uppercase tracking-widest rounded whitespace-nowrap">
+                            {item.error_type || 'Pipeline Error'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <EmptyState
+                title="No failed automation runs"
+                description="All book pipeline operations are running smoothly without any recovery incidents."
+              />
+            )}
           </div>
         </div>
 
@@ -272,7 +280,7 @@ const RecoveryPage = () => {
                 <div className="flex justify-between items-start pb-4 border-b border-[var(--color-border)]">
                   <div>
                     <span className="text-[9px] text-[var(--color-muted-ink)] font-bold uppercase tracking-widest block font-sans">Incident Report</span>
-                    <h3 className="text-lg font-bold text-[var(--color-archive-green)] font-serif mt-0.5">#{activeItem.book_id || '8842'}</h3>
+                    <h3 className="text-lg font-bold text-[var(--color-archive-green)] font-serif mt-0.5">#{activeItem.book_id}</h3>
                     <p className="text-xs text-[var(--color-ink)] font-serif italic mt-1 font-bold">{activeItem.title}</p>
                   </div>
                   <div className="text-right text-[9px] text-[var(--color-muted-ink)] font-mono uppercase tracking-wider space-y-0.5 font-bold">
@@ -285,7 +293,7 @@ const RecoveryPage = () => {
                 <div className="space-y-1">
                   <span className="text-[9px] text-[var(--color-muted-ink)] font-bold uppercase tracking-widest block">Error Reason</span>
                   <div className="p-3 bg-[var(--color-danger-soft)] border border-[var(--color-danger)]/20 rounded-xl text-[11px] font-mono text-[var(--color-danger)] break-words leading-relaxed select-all font-semibold">
-                    {activeItem.last_error || activeItem.error_message || 'Unexpected token < in JSON at position 0'}
+                    {activeItem.last_error || activeItem.error_message || 'Pipeline execution failure logged.'}
                   </div>
                 </div>
 

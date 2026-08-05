@@ -74,8 +74,8 @@ const CoverReviewPage = () => {
             urls[optNum] = res.url;
           }
         } catch (e) {
-          // Fallback to placeholder cover logic
-          urls[optNum] = `https://picsum.photos/300/450?random=${selectedBook.book_id}_${optNum}`;
+          // If signed URL fetch fails, set null so neutral cover placeholder is rendered
+          urls[optNum] = null;
         }
       }
       setOptionUrls(urls);
@@ -125,7 +125,7 @@ const CoverReviewPage = () => {
       await submitHumanCover(selectedBook.book_id || selectedBook.id, {
         approved_cover_path: storage_path,
         reviewer_name: currentUser?.name || 'Art Director',
-        reviewer_email: currentUser?.email || 'admin@arche.com',
+        reviewer_email: currentUser?.email || '',
         notes: notes || 'Custom direct human cover design upload'
       });
 
@@ -161,7 +161,7 @@ const CoverReviewPage = () => {
 
     const payload = {
       reviewer_name: currentUser?.name || 'Art Director',
-      reviewer_email: currentUser?.email || 'admin@arche.com',
+      reviewer_email: currentUser?.email || '',
       notes: notes || `Approved cover option #${selectedOption}`,
     };
 
@@ -203,18 +203,8 @@ const CoverReviewPage = () => {
   if (books.length === 0) {
     return (
       <EmptyState
-        title="No cover designs pending review."
-        description="All generated cover options have been reviewed or approved."
-      />
-    );
-  }
-
-
-  if (books.length === 0) {
-    return (
-      <EmptyState
         title="No books waiting for cover review."
-        description=""
+        description="All generated cover options have been reviewed or approved."
       />
     );
   }

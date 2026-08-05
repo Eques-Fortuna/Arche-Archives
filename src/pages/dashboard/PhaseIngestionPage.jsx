@@ -2,14 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Play, RotateCcw, Eye, ArrowLeft, Loader2, AlertCircle, CheckCircle2, Upload, HelpCircle, ShieldAlert } from 'lucide-react';
+import { Play, RotateCcw, ArrowLeft, Loader2, AlertCircle, CheckCircle2, HelpCircle, ShieldAlert } from 'lucide-react';
 import { getEligibleBooks, runPhase, runPhaseBatch, retryPhase } from '../../lib/api';
 import { getPhaseConfig } from '../../lib/phaseConfig';
 import { useAuth } from '../../context/AuthContext';
 import { canRunAutomation, canRetry, canUploadHumanCover } from '../../lib/auth';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorState from '../../components/ui/ErrorState';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import EmptyState from '../../components/ui/EmptyState';
@@ -317,7 +316,7 @@ const PhaseIngestionPage = () => {
                       </div>
                       <p className="text-xs text-[#5F5A52] font-medium">by {book.author}</p>
                       <div className="flex flex-wrap items-center gap-3 text-[10px] text-[#5F5A52] font-mono uppercase tracking-wider pt-0.5">
-                        <span>ISBN-13: {book.isbn || '978-3-16-148410-0'}</span>
+                        <span>ISBN-13: {book.isbn || 'Unassigned'}</span>
                         <span className="hidden sm:inline">•</span>
                         <span>Ingestion: {new Date(book.created_at || Date.now()).toLocaleDateString()}</span>
                       </div>

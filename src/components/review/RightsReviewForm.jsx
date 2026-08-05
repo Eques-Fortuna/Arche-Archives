@@ -46,8 +46,8 @@ const RightsReviewForm = ({ book, currentUser, onAction, isPending }) => {
 
   const handleConfirm = () => {
     const reviewerInfo = {
-      reviewer_name: currentUser?.name || 'Jane Doe',
-      reviewer_email: currentUser?.email || 'admin@arche.com',
+      reviewer_name: currentUser?.name || 'Staff Reviewer',
+      reviewer_email: currentUser?.email || '',
     };
 
     if (confirmAction === 'approve') {

@@ -48,8 +48,8 @@ const CoverReviewCard = ({ book, currentUser, onAction, isPending }) => {
 
   const handleConfirm = () => {
     const payload = {
-      reviewer_name: currentUser?.name || 'Jane Smith',
-      reviewer_email: currentUser?.email || 'admin@arche.com',
+      reviewer_name: currentUser?.name || 'Staff Reviewer',
+      reviewer_email: currentUser?.email || '',
       notes: notes || `Approved cover Option ${selectedOption}`,
     };
 
@@ -87,8 +87,8 @@ const CoverReviewCard = ({ book, currentUser, onAction, isPending }) => {
       toast.loading('Applying cover override to pipeline...', { id: toastId });
       await submitHumanCover(book.book_id || book.id, {
         approved_cover_path: storage_path,
-        reviewer_name: currentUser?.name || 'Jane Smith',
-        reviewer_email: currentUser?.email || 'admin@arche.com',
+        reviewer_name: currentUser?.name || 'Staff Reviewer',
+        reviewer_email: currentUser?.email || '',
         notes: notes || 'Custom direct human cover design upload'
       });
 

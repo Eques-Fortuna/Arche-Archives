@@ -53,8 +53,8 @@ const TextReviewCard = ({ book, currentUser, onAction, isPending }) => {
 
   const handleConfirm = () => {
     const payload = {
-      reviewer_name: currentUser?.name || 'Jane Doe',
-      reviewer_email: currentUser?.email || 'admin@arche.com',
+      reviewer_name: currentUser?.name || 'Staff Reviewer',
+      reviewer_email: currentUser?.email || '',
       notes: notes,
     };
 

@@ -1,3 +1,7 @@
+if (import.meta.env.PROD && !import.meta.env.VITE_API_BASE_URL) {
+  throw new Error('VITE_API_BASE_URL environment variable is required in production');
+}
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 export const AUTH_TOKEN_KEY = 'arche_token';
 export const USER_INFO_KEY = 'arche_user';

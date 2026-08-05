@@ -71,6 +71,7 @@ const PublishingPage = () => {
     mutationFn: (bookId) => archiveBook(bookId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminBooksPublishing'] });
+      queryClient.invalidateQueries({ queryKey: ['adminBooks'] });
       toast.success('Book moved to archived catalog successfully.');
       setConfirmArchiveId(null);
     },

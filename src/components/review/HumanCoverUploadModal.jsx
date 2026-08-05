@@ -95,8 +95,8 @@ const HumanCoverUploadModal = ({ isOpen, onClose, book, currentUser, isReupload 
 
       const payload = {
         approved_cover_path: storage_path,
-        reviewer_name: currentUser?.name || 'Admin',
-        reviewer_email: currentUser?.email || 'admin@arche.com',
+        reviewer_name: currentUser?.name || 'Staff Reviewer',
+        reviewer_email: currentUser?.email || '',
         notes: notes || (isReupload ? 'Reuploaded cover replacement.' : 'Human-designed cover uploaded and approved.')
       };
 

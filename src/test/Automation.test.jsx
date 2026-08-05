@@ -98,6 +98,10 @@ describe('Arche Archives Ingestion & Automation Pipeline Integration Tests', () 
       expect(content).not.toContain('INTERNAL_API_KEY');
       expect(content).not.toContain('AWS_SECRET_ACCESS_KEY');
       expect(content).not.toContain('SPACES_SECRET');
+
+      // Check demo credentials quick-fill
+      expect(content).not.toContain('handleQuickFill');
+      expect(content).not.toContain('Autofill Credentials');
     });
   });
 });

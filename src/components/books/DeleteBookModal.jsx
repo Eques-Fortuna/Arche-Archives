@@ -33,6 +33,11 @@ const DeleteBookModal = ({ isOpen, onClose, book, onSuccess }) => {
       queryClient.invalidateQueries({ queryKey: ['adminBooks'] });
       queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
       queryClient.invalidateQueries({ queryKey: ['publishingList'] });
+      queryClient.invalidateQueries({ queryKey: ['adminBooksPublishing'] });
+      queryClient.invalidateQueries({ queryKey: ['adminTextQueue'] });
+      queryClient.invalidateQueries({ queryKey: ['adminCoverQueue'] });
+      queryClient.invalidateQueries({ queryKey: ['adminRightsQueue'] });
+      queryClient.invalidateQueries({ queryKey: ['adminRecovery'] });
 
       setConfirmInput('');
       onClose();
@@ -43,7 +48,9 @@ const DeleteBookModal = ({ isOpen, onClose, book, onSuccess }) => {
         navigate('/dashboard/books');
       }
     } catch (err) {
-      console.error(err);
+      if (import.meta.env.DEV) {
+        console.error(err);
+      }
       const errMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to delete book permanently.';
       const details = err.response?.data?.details || err.response?.data?.storage_errors;
       

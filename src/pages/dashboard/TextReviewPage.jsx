@@ -134,7 +134,7 @@ const TextReviewPage = () => {
 
     const payload = {
       reviewer_name: currentUser?.name || 'Chief Editor',
-      reviewer_email: currentUser?.email || 'admin@arche.com',
+      reviewer_email: currentUser?.email || '',
       notes: notes,
     };
 

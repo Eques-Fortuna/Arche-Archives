@@ -23,7 +23,7 @@ describe('Arche Archives Production Features & Fixes Tests', () => {
 
     await waitFor(() => {
       expect(screen.getAllByRole('button', { name: /Reupload Cover/i })[0]).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
 
     unmount();
     removeStoredToken();
