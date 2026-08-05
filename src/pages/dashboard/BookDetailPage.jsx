@@ -24,15 +24,26 @@ import {
   retryPhase,
   resetBookStageStatus,
   publishBook,
+  unarchiveBook,
   getAdminBookQc,
   getAdminBookRenderReports,
   getAdminBookApprovals
 } from '../../lib/api';
 import HumanCoverUploadModal from '../../components/review/HumanCoverUploadModal';
+import DeleteBookModal from '../../components/books/DeleteBookModal';
 
 // Context
 import { useAuth } from '../../context/AuthContext';
-import { canRunAutomation, canManualOverride, canUploadHumanCover } from '../../lib/auth';
+import {
+  canRunAutomation,
+  canManualOverride,
+  canUploadHumanCover,
+  canReuploadCover,
+  canDeleteBook,
+  canUnarchive
+} from '../../lib/auth';
+import { RefreshCw, Trash2, Archive } from 'lucide-react';
+
 
 // Components
 import Card from '../../components/ui/Card';
@@ -66,6 +77,8 @@ const BookDetailPage = () => {
   const [phaseToRun, setPhaseToRun] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showHumanUploadModal, setShowHumanUploadModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isReuploadMode, setIsReuploadMode] = useState(false);
 
   // Tabs state for the right column
   const [rightActiveTab, setRightActiveTab] = useState('metadata');
@@ -161,9 +174,22 @@ const BookDetailPage = () => {
     }
   });
 
+  const unarchiveMutation = useMutation({
+    mutationFn: () => unarchiveBook(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminBook', id] });
+      queryClient.invalidateQueries({ queryKey: ['adminBooks'] });
+      toast.success('Book unarchived successfully!');
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to unarchive book.');
+    }
+  });
+
   const handlePublish = () => {
     publishMutation.mutate();
   };
+
 
   const handleRetry = () => {
     retryMutation.mutate();
@@ -286,9 +312,16 @@ const BookDetailPage = () => {
                       book.rights_status === 'verified' &&
                       book.data_status !== 'packaged';
 
-  const canTrigger = canRunAutomation(user);
-  const canOverride = canManualOverride(user);
-  const isArchived = book.current_stage === 'archived';
+  const isArchived =
+    String(book.current_stage || '').toLowerCase() === 'archived' ||
+    String(book.publication_status || '').toLowerCase() === 'archived';
+
+  const canTrigger = canRunAutomation(user) && !isArchived;
+  const canOverride = canManualOverride(user) && !isArchived;
+  const canReupload = canReuploadCover(user);
+  const canDelete = canDeleteBook(user);
+  const canUnarch = canUnarchive(user);
+
   const isCoverApproved = book.cover_status === 'approved' || book.current_stage === 'cover_approved';
   const isRoleEligible = canUploadHumanCover(user);
 
@@ -321,7 +354,32 @@ const BookDetailPage = () => {
         </Link>
       </div>
 
+      {/* Archived Banner */}
+      {isArchived && (
+        <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Archive className="w-5 h-5 text-amber-400 shrink-0" />
+            <div>
+              <span className="font-bold text-sm block">This book is archived and hidden from active dashboard lists.</span>
+              <span className="text-xs text-amber-300/80">Active pipeline steps and automated actions are disabled while archived.</span>
+            </div>
+          </div>
+          {canUnarch && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => unarchiveMutation.mutate()}
+              disabled={unarchiveMutation.isPending}
+              className="shrink-0 bg-amber-600 hover:bg-amber-500 text-white border-none"
+            >
+              Unarchive Book
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Book header */}
+
       <Card className="p-6 border border-[#DED2BE] bg-[#FFFDF8]">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -471,11 +529,28 @@ const BookDetailPage = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setShowHumanUploadModal(true)}
+                    onClick={() => {
+                      setIsReuploadMode(false);
+                      setShowHumanUploadModal(true);
+                    }}
                     className="flex items-center gap-1 text-[10px]"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     Skip AI & Upload Cover
+                  </Button>
+                )}
+                {canReupload && !isArchived && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsReuploadMode(true);
+                      setShowHumanUploadModal(true);
+                    }}
+                    className="flex items-center gap-1 text-[10px]"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Reupload Cover
                   </Button>
                 )}
                 {showPhase6 && (
@@ -607,18 +682,35 @@ const BookDetailPage = () => {
                     <span className="text-[10px] text-[#5F5A52] font-semibold uppercase tracking-wider font-sans block mt-0.5">Status: {book.cover_status}</span>
                   </div>
                 </div>
-                {book.cover_status === 'pending_review' ? (
-                  <Link to="/dashboard/review/covers">
-                    <Button variant="primary" size="sm" className="text-[10px] py-1 h-7">
-                      Select Cover Choice
+                <div className="flex items-center gap-2">
+                  {book.cover_status === 'pending_review' ? (
+                    <Link to="/dashboard/review/covers">
+                      <Button variant="primary" size="sm" className="text-[10px] py-1 h-7">
+                        Select Cover Choice
+                      </Button>
+                    </Link>
+                  ) : (
+                    <span className={`text-[10px] font-sans font-bold uppercase tracking-widest ${book.cover_status === 'approved' ? 'text-[#3F6F5A]' : 'text-[#5F5A52]'}`}>
+                      {book.cover_status === 'approved' ? 'Approved' : 'Queue Empty'}
+                    </span>
+                  )}
+                  {canReupload && !isArchived && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsReuploadMode(true);
+                        setShowHumanUploadModal(true);
+                      }}
+                      className="text-[10px] py-1 h-7 flex items-center gap-1"
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      Reupload Cover
                     </Button>
-                  </Link>
-                ) : (
-                  <span className={`text-[10px] font-sans font-bold uppercase tracking-widest ${book.cover_status === 'approved' ? 'text-[#3F6F5A]' : 'text-[#5F5A52]'}`}>
-                    {book.cover_status === 'approved' ? 'Approved' : 'Queue Empty'}
-                  </span>
-                )}
+                  )}
+                </div>
               </div>
+
 
               {/* Rights Verification item */}
               <div className="flex items-center justify-between p-3.5 bg-[#FAF6EE] rounded border border-[#DED2BE]">
@@ -710,6 +802,37 @@ const BookDetailPage = () => {
           </Card>
         </div>
       </div>
+      {/* Danger Zone Section (Admin Only) */}
+      {canDelete && (
+        <Card className="p-6 border border-[#8A2D3B]/30 bg-[#8A2D3B]/5 space-y-4">
+          <div className="flex justify-between items-center border-b border-[#8A2D3B]/20 pb-3">
+            <div className="flex items-center gap-2">
+              <AlertOctagon className="w-4 h-4 text-[#8A2D3B]" />
+              <h3 className="text-xs font-sans font-bold text-[#8A2D3B] uppercase tracking-widest">
+                Danger Zone (Admin Only)
+              </h3>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
+            <div className="space-y-1">
+              <span className="font-bold text-[#1A1A1A] block">Delete Book Permanently</span>
+              <p className="text-[#5F5A52] max-w-xl leading-relaxed">
+                Permanently remove this book, its database records, generated files, cover images, data chunks, and DigitalOcean storage objects. This action cannot be undone.
+              </p>
+            </div>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={() => setShowDeleteModal(true)}
+              className="shrink-0 flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete Book Permanently
+            </Button>
+          </div>
+        </Card>
+      )}
+
       <ConfirmDialog
         isOpen={showConfirmModal}
         onClose={() => { setShowConfirmModal(false); setPhaseToRun(null); }}
@@ -727,11 +850,31 @@ const BookDetailPage = () => {
       {showHumanUploadModal && (
         <HumanCoverUploadModal
           isOpen={showHumanUploadModal}
-          onClose={() => setShowHumanUploadModal(false)}
+          onClose={() => {
+            setShowHumanUploadModal(false);
+            setIsReuploadMode(false);
+          }}
           book={{ book_id: book.book_id || book.id, title: book.title }}
           currentUser={user}
+          isReupload={isReuploadMode}
           onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['adminBook', id] });
+            queryClient.invalidateQueries({ queryKey: ['adminBookFiles', id] });
+            queryClient.invalidateQueries({ queryKey: ['coverReviewQueue'] });
+            queryClient.invalidateQueries({ queryKey: ['adminBooks'] });
             refetchBook();
+          }}
+        />
+      )}
+      {showDeleteModal && (
+        <DeleteBookModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          book={book}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['adminBooks'] });
+            queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
+            queryClient.invalidateQueries({ queryKey: ['publishingList'] });
           }}
         />
       )}
@@ -740,3 +883,4 @@ const BookDetailPage = () => {
 };
 
 export default BookDetailPage;
+

@@ -97,7 +97,19 @@ const BooksPage = () => {
 
   // URL-driven and Search-driven Filtering
   const filteredBooks = useMemo(() => {
-    let list = Array.isArray(data) ? data : [];
+    let list = Array.isArray(data) ? data : data?.books || [];
+
+    // Exclude archived books by default unless publication_status=archived or current_stage=archived is explicitly requested
+    const requestedPublicationStatus = searchParams.get('publication_status');
+    const requestedCurrentStage = searchParams.get('current_stage');
+
+    if (requestedPublicationStatus !== 'archived' && requestedCurrentStage !== 'archived') {
+      list = list.filter(
+        (b) =>
+          String(b.publication_status || b.publicationStatus).toLowerCase() !== 'archived' &&
+          String(b.current_stage || b.currentStage).toLowerCase() !== 'archived'
+      );
+    }
 
     // 1. Filter by keyword
     if (search.trim()) {
@@ -111,9 +123,8 @@ const BooksPage = () => {
     }
 
     // 2. Filter by search params
-    const currentStage = searchParams.get('current_stage');
-    if (currentStage) {
-      list = list.filter((b) => String(b.current_stage).toLowerCase() === currentStage.toLowerCase());
+    if (requestedCurrentStage) {
+      list = list.filter((b) => String(b.current_stage).toLowerCase() === requestedCurrentStage.toLowerCase());
     }
 
     const stageStatus = searchParams.get('stage_status');
@@ -136,9 +147,8 @@ const BooksPage = () => {
       list = list.filter((b) => String(b.rights_status).toLowerCase() === rightsStatus.toLowerCase());
     }
 
-    const publicationStatus = searchParams.get('publication_status');
-    if (publicationStatus) {
-      list = list.filter((b) => String(b.publication_status).toLowerCase() === publicationStatus.toLowerCase());
+    if (requestedPublicationStatus) {
+      list = list.filter((b) => String(b.publication_status).toLowerCase() === requestedPublicationStatus.toLowerCase());
     }
 
     const workType = searchParams.get('work_type');
@@ -188,9 +198,10 @@ const BooksPage = () => {
           <h1 className="text-3xl font-bold text-[#2A473E] font-serif leading-tight">Books Catalog</h1>
           <p className="text-xs text-[#5F5A52] font-mono mt-1 font-bold uppercase tracking-widest flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#3F6F5A]" />
-            {filteredBooks.length} ARCHIVED VOLUMES
+            {filteredBooks.length} VOLUMES IN CATALOG
           </p>
         </div>
+
         <div className="flex items-center gap-3">
           <Button
             variant="outline"

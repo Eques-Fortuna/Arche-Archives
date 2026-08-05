@@ -176,9 +176,19 @@ const DashboardHomePage = () => {
   const isAnyLoading = booksLoading || recoveryLoading || textLoading || coverLoading || rightsLoading;
   const isAnyError = booksError || recoveryError || textError || coverError || rightsError;
 
-  // Filter logic matching the catalog
+  // Filter logic matching the catalog (excluding archived books by default from active overview)
   const filteredBooks = useMemo(() => {
-    let list = Array.isArray(booksData) ? booksData : [];
+    let list = Array.isArray(booksData) ? booksData : booksData?.books || [];
+
+    // Filter out archived books from active overview unless explicitly requested in search params
+    const requestedPublicationStatus = searchParams.get('publication_status');
+    if (requestedPublicationStatus !== 'archived') {
+      list = list.filter(
+        (b) =>
+          String(b.publication_status || b.publicationStatus).toLowerCase() !== 'archived' &&
+          String(b.current_stage || b.currentStage).toLowerCase() !== 'archived'
+      );
+    }
 
     if (search.trim()) {
       const query = search.toLowerCase();
@@ -215,9 +225,8 @@ const DashboardHomePage = () => {
       list = list.filter((b) => String(b.rights_status).toLowerCase() === rightsStatus.toLowerCase());
     }
 
-    const publicationStatus = searchParams.get('publication_status');
-    if (publicationStatus) {
-      list = list.filter((b) => String(b.publication_status).toLowerCase() === publicationStatus.toLowerCase());
+    if (requestedPublicationStatus) {
+      list = list.filter((b) => String(b.publication_status).toLowerCase() === requestedPublicationStatus.toLowerCase());
     }
 
     const workType = searchParams.get('work_type');
@@ -245,33 +254,53 @@ const DashboardHomePage = () => {
     setSearchParams(newParams);
   };
 
-  // Redesign Spec Metrics calculation
+  // Metrics calculation excluding archived books & using real backend/queue approvals
   const metrics = useMemo(() => {
-    const books = Array.isArray(booksData) ? booksData : [];
-    
-    // 1. Ingestion Count: volumes currently in compile phases
-    const ingestionCount = books.filter(b => 
-      ['uploaded', 'normalization', 'structure', 'rendering', 'assembly'].includes(String(b.current_stage).toLowerCase()) &&
-      b.stage_status !== 'failed'
+    const rawBooks = Array.isArray(booksData) ? booksData : booksData?.books || [];
+    const activeBooks = rawBooks.filter(
+      (b) =>
+        String(b.publication_status || b.publicationStatus).toLowerCase() !== 'archived' &&
+        String(b.current_stage || b.currentStage).toLowerCase() !== 'archived'
+    );
+
+    // 1. Ingestion Count: active volumes currently in compile phases
+    const ingestionCount = activeBooks.filter((b) =>
+      ['uploaded', 'normalization', 'structure', 'rendering', 'assembly'].includes(
+        String(b.current_stage).toLowerCase()
+      ) && b.stage_status !== 'failed'
     ).length;
 
-    // 2. Human Approval Count: pending reviewer action
-    const textPendingCount = Array.isArray(textQueueData) ? textQueueData.length : 0;
-    const coverPendingCount = Array.isArray(coverQueueData) ? coverQueueData.length : 0;
-    const rightsPendingCount = Array.isArray(rightsQueueData) ? rightsQueueData.length : 0;
-    const approvalsNeeded = textPendingCount + coverPendingCount + rightsPendingCount;
+    // 2. Human Approval Count: pending reviewer action from queues or backend metric object
+    const backendApproval = booksData?.human_approval || booksData?.humanApproval;
+
+    let textCount = Array.isArray(textQueueData) ? textQueueData.length : 0;
+    let coverCount = Array.isArray(coverQueueData) ? coverQueueData.length : 0;
+    let rightsCount = Array.isArray(rightsQueueData) ? rightsQueueData.length : 0;
+    let totalApprovals = textCount + coverCount + rightsCount;
+
+    if (backendApproval && typeof backendApproval === 'object') {
+      totalApprovals = backendApproval.total ?? totalApprovals;
+      textCount = backendApproval.text_reviews ?? textCount;
+      coverCount = backendApproval.cover_reviews ?? coverCount;
+      rightsCount = backendApproval.rights_reviews ?? rightsCount;
+    }
 
     // 3. Ready to Publish Count: cleared reviews but not published
-    const readyToPublishCount = books.filter(b => 
-      String(b.text_status).toLowerCase() === 'approved' &&
-      String(b.cover_status).toLowerCase() === 'approved' &&
-      (String(b.rights_status).toLowerCase() === 'verified' || String(b.rights_status).toLowerCase() === 'approved') &&
-      String(b.publication_status).toLowerCase() !== 'published'
+    const readyToPublishCount = activeBooks.filter(
+      (b) =>
+        String(b.text_status).toLowerCase() === 'approved' &&
+        String(b.cover_status).toLowerCase() === 'approved' &&
+        (String(b.rights_status).toLowerCase() === 'verified' ||
+          String(b.rights_status).toLowerCase() === 'approved') &&
+        String(b.publication_status).toLowerCase() !== 'published'
     ).length;
 
     return {
       ingestion: ingestionCount,
-      approvals: approvalsNeeded,
+      approvals: totalApprovals,
+      textCount,
+      coverCount,
+      rightsCount,
       ready: readyToPublishCount
     };
   }, [booksData, textQueueData, coverQueueData, rightsQueueData]);
@@ -283,7 +312,7 @@ const DashboardHomePage = () => {
     const coverQueue = Array.isArray(coverQueueData) ? coverQueueData : [];
     const rightsQueue = Array.isArray(rightsQueueData) ? rightsQueueData : [];
 
-    textQueue.forEach(b => {
+    textQueue.forEach((b) => {
       items.push({
         id: b.book_id,
         title: b.title,
@@ -297,7 +326,7 @@ const DashboardHomePage = () => {
       });
     });
 
-    coverQueue.forEach(b => {
+    coverQueue.forEach((b) => {
       items.push({
         id: b.book_id,
         title: b.title,
@@ -311,7 +340,7 @@ const DashboardHomePage = () => {
       });
     });
 
-    rightsQueue.forEach(b => {
+    rightsQueue.forEach((b) => {
       items.push({
         id: b.book_id,
         title: b.title,
@@ -333,28 +362,27 @@ const DashboardHomePage = () => {
     const rawLogs = [];
     const books = Array.isArray(booksData) ? booksData : [];
 
-    books.forEach(b => {
+    books.forEach((b) => {
       if (b.last_error) {
         rawLogs.push({
-          time: new Date(b.updated_at).toLocaleTimeString(),
+          time: new Date(b.updated_at || Date.now()).toLocaleTimeString(),
           level: 'WARN',
-          message: `[${b.title}] Compiler halted: ${b.last_error.substring(0, 70)}...`
+          message: `[${b.title}] Compiler halted: ${String(b.last_error).substring(0, 70)}...`
         });
       }
       if (b.stage_status === 'complete') {
         rawLogs.push({
-          time: new Date(b.updated_at).toLocaleTimeString(),
+          time: new Date(b.updated_at || Date.now()).toLocaleTimeString(),
           level: 'INFO',
           message: `Phase ${b.current_stage} successful for '${b.title}'`
         });
       }
     });
 
-    // Sort logs and apply search term filter
     const sorted = rawLogs.sort((a, b) => b.time.localeCompare(a.time));
     if (traceSearch.trim()) {
       const q = traceSearch.toLowerCase();
-      return sorted.filter(l => l.message.toLowerCase().includes(q) || l.level.toLowerCase().includes(q));
+      return sorted.filter((l) => l.message.toLowerCase().includes(q) || l.level.toLowerCase().includes(q));
     }
     return sorted.slice(0, 7);
   }, [booksData, traceSearch]);
@@ -383,7 +411,7 @@ const DashboardHomePage = () => {
         </p>
       </div>
 
-      {/* Overview Stats (3 Grid Panels exactly matching Google Stitch Spec) */}
+      {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Ingestion */}
         <Card className="p-6 flex flex-col justify-between h-36 border border-[#DED2BE] bg-[#FFFDF8]">
@@ -419,8 +447,10 @@ const DashboardHomePage = () => {
             <span className="text-3xl font-bold text-[#8A2D3B] font-serif block">
               {metrics.approvals}
             </span>
-            <span className="text-[10px] text-[#5F5A52] uppercase tracking-wider font-semibold">
-              Requires manual textual oversight
+            <span className="text-[10px] text-[#5F5A52] uppercase tracking-wider font-semibold block truncate">
+              {metrics.approvals === 0
+                ? 'No manual approvals waiting.'
+                : `Text: ${metrics.textCount} · Cover: ${metrics.coverCount} · Rights: ${metrics.rightsCount}`}
             </span>
           </div>
         </Card>
@@ -445,6 +475,7 @@ const DashboardHomePage = () => {
           </div>
         </Card>
       </div>
+
 
       {/* Split Section: Urgent Approvals & Automation Trace */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">

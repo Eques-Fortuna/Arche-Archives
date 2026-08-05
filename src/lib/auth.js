@@ -144,3 +144,18 @@ export const canUploadHumanCover = (user) => {
   return ['admin', 'operator', 'cover_reviewer'].includes(user?.role);
 };
 
+/**
+ * Checks if user is permitted to reupload and replace an approved cover
+ */
+export const canReuploadCover = (user) => {
+  return ['admin', 'operator', 'cover_reviewer'].includes(user?.role);
+};
+
+/**
+ * Checks if user is permitted to permanently hard delete a book
+ */
+export const canDeleteBook = (user) => {
+  return user?.role === 'admin';
+};
+
+

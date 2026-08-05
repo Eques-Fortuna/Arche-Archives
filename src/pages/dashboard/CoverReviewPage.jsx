@@ -203,6 +203,16 @@ const CoverReviewPage = () => {
   if (books.length === 0) {
     return (
       <EmptyState
+        title="No cover designs pending review."
+        description="All generated cover options have been reviewed or approved."
+      />
+    );
+  }
+
+
+  if (books.length === 0) {
+    return (
+      <EmptyState
         title="No books waiting for cover review."
         description=""
       />

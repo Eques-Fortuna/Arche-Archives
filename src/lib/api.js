@@ -451,4 +451,38 @@ export const submitHumanCover = async (bookId, payload) => {
   return response.data;
 };
 
+/**
+ * Reupload cover image and replace old approved cover
+ */
+export const reuploadCover = async (bookId, payload) => {
+  const response = await api.post(`/api/admin/books/${bookId}/covers/reupload`, payload);
+  return response.data;
+};
+
+/**
+ * Request presigned upload URL for cover reupload
+ */
+export const requestCoverReuploadUrl = async (bookId, payload) => {
+  try {
+    const response = await api.post(`/api/admin/books/${bookId}/covers/reupload/upload-url`, payload);
+    return response.data;
+  } catch (e) {
+    return requestHumanCoverUploadUrl(bookId, payload);
+  }
+};
+
+/**
+ * Permanently delete an entire book record and DigitalOcean storage objects
+ */
+export const deleteBookPermanently = async (bookId) => {
+  const response = await api.delete(`/api/admin/books/${bookId}`, {
+    data: {
+      confirm: 'DELETE_BOOK',
+      delete_storage: true
+    }
+  });
+  return response.data;
+};
+
 export default api;
+

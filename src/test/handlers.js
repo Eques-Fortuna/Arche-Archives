@@ -212,5 +212,32 @@ export const handlers = [
 
   http.post('*/api/admin/books/:id/unarchive', () => {
     return HttpResponse.json({ ok: true });
+  }),
+
+  http.post('*/api/admin/books/:id/covers/human-design/upload-url', () => {
+    return HttpResponse.json({
+      upload_url: 'http://mock-storage.com/upload-url',
+      storage_path: 'covers/human/custom_cover.jpg'
+    });
+  }),
+
+  http.post('*/api/admin/books/:id/covers/reupload/upload-url', () => {
+    return HttpResponse.json({
+      upload_url: 'http://mock-storage.com/upload-url',
+      storage_path: 'covers/reupload/custom_cover.jpg'
+    });
+  }),
+
+  http.post('*/api/admin/books/:id/covers/human-design', () => {
+    return HttpResponse.json({ ok: true, message: 'Cover updated successfully.' });
+  }),
+
+  http.post('*/api/admin/books/:id/covers/reupload', () => {
+    return HttpResponse.json({ ok: true, message: 'Cover replaced successfully.' });
+  }),
+
+  http.delete('*/api/admin/books/:id', () => {
+    return HttpResponse.json({ ok: true, message: 'Book deleted permanently.' });
   })
 ];
+
