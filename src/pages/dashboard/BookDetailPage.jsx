@@ -31,6 +31,7 @@ import {
 } from '../../lib/api';
 import HumanCoverUploadModal from '../../components/review/HumanCoverUploadModal';
 import DeleteBookModal from '../../components/books/DeleteBookModal';
+import DocxEditUploadModal from '../../components/review/DocxEditUploadModal';
 
 // Context
 import { useAuth } from '../../context/AuthContext';
@@ -40,9 +41,11 @@ import {
   canUploadHumanCover,
   canReuploadCover,
   canDeleteBook,
-  canUnarchive
+  canUnarchive,
+  canUploadDocxEdit
 } from '../../lib/auth';
 import { RefreshCw, Trash2, Archive } from 'lucide-react';
+
 
 
 // Components
@@ -78,7 +81,9 @@ const BookDetailPage = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showHumanUploadModal, setShowHumanUploadModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDocxModal, setShowDocxModal] = useState(false);
   const [isReuploadMode, setIsReuploadMode] = useState(false);
+
 
   // Tabs state for the right column
   const [rightActiveTab, setRightActiveTab] = useState('metadata');
@@ -321,6 +326,8 @@ const BookDetailPage = () => {
   const canReupload = canReuploadCover(user);
   const canDelete = canDeleteBook(user);
   const canUnarch = canUnarchive(user);
+  const canDocxEdit = canUploadDocxEdit(user);
+
 
   const isCoverApproved = book.cover_status === 'approved' || book.current_stage === 'cover_approved';
   const isRoleEligible = canUploadHumanCover(user);
@@ -551,6 +558,17 @@ const BookDetailPage = () => {
                   >
                     <RefreshCw className="w-3 h-3" />
                     Reupload Cover
+                  </Button>
+                )}
+                {canDocxEdit && !isArchived && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDocxModal(true)}
+                    className="flex items-center gap-1 text-[10px]"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Upload Edited DOCX
                   </Button>
                 )}
                 {showPhase6 && (
@@ -878,9 +896,19 @@ const BookDetailPage = () => {
           }}
         />
       )}
+
+      {showDocxModal && (
+        <DocxEditUploadModal
+          isOpen={showDocxModal}
+          onClose={() => setShowDocxModal(false)}
+          book={book}
+          onSuccess={() => refetchBook()}
+        />
+      )}
     </div>
   );
 };
+
 
 export default BookDetailPage;
 

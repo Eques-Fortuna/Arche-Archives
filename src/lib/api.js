@@ -484,5 +484,22 @@ export const deleteBookPermanently = async (bookId) => {
   return response.data;
 };
 
+/**
+ * Request presigned upload URL for edited DOCX
+ */
+export const requestDocxEditUploadUrl = async (bookId, payload) => {
+  const response = await api.post(`/api/admin/books/${bookId}/docx-edit/upload-url`, payload);
+  return response.data;
+};
+
+/**
+ * Trigger DOCX edit import and Phase 3 re-render queue
+ */
+export const triggerDocxEditImport = async (bookId, payload) => {
+  const response = await api.post(`/api/admin/books/${bookId}/docx-edit/import`, payload);
+  return response.data;
+};
+
 export default api;
+
 

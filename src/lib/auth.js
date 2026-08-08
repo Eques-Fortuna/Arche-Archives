@@ -158,4 +158,12 @@ export const canDeleteBook = (user) => {
   return user?.role === 'admin';
 };
 
+/**
+ * Checks if user is permitted to upload edited DOCX for Phase 4 text import
+ */
+export const canUploadDocxEdit = (user) => {
+  return ['admin', 'operator', 'text_reviewer'].includes(user?.role);
+};
+
+
 

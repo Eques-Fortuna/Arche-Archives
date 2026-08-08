@@ -9,14 +9,16 @@ import {
   getFileSignedUrl
 } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
-import { canReviewText } from '../../lib/auth';
+import { canReviewText, canUploadDocxEdit } from '../../lib/auth';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ErrorState from '../../components/ui/ErrorState';
 import EmptyState from '../../components/ui/EmptyState';
 import Button from '../../components/ui/Button';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import StatusBadge from '../../components/ui/StatusBadge';
-import { Clock, FileDown, AlertTriangle, ShieldAlert } from 'lucide-react';
+import DocxEditUploadModal from '../../components/review/DocxEditUploadModal';
+import { Clock, FileDown, AlertTriangle, ShieldAlert, Upload } from 'lucide-react';
+
 
 const TextReviewPage = () => {
   const queryClient = useQueryClient();
@@ -25,8 +27,10 @@ const TextReviewPage = () => {
   const [selectedBookIndex, setSelectedBookIndex] = useState(0);
   const [notes, setNotes] = useState('');
   const [confirmAction, setConfirmAction] = useState(null); // 'approve' | 'reject' | 'needs_changes'
+  const [showDocxModal, setShowDocxModal] = useState(false);
 
   // PDF Preview State
+
   const [pdfUrl, setPdfUrl] = useState('');
   const [pdfLoading, setPdfLoading] = useState(false);
 
@@ -204,8 +208,19 @@ const TextReviewPage = () => {
             <FileDown className="w-3 h-3" />
             EPUB
           </button>
+
+          {canUploadDocxEdit(currentUser) && selectedBook && (
+            <button
+              onClick={() => setShowDocxModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1 border border-[var(--color-archive-green)] text-[10px] font-bold text-[var(--color-archive-green)] hover:bg-[var(--color-archive-green)] hover:text-[#FAF6EE] uppercase tracking-wider rounded bg-[var(--color-archive-green)]/10 cursor-pointer transition-all shadow-sm"
+            >
+              <Upload className="w-3 h-3" />
+              Upload Edited DOCX
+            </button>
+          )}
         </div>
       </div>
+
 
       <div className="flex flex-col lg:flex-row gap-6 items-stretch min-h-[680px]">
         {/* Left Sidebar Book Selector */}
@@ -373,8 +388,19 @@ const TextReviewPage = () => {
         confirmVariant={confirmAction === 'reject' ? 'danger' : 'primary'}
         isLoading={actionMutation.isPending}
       />
+
+      {/* Docx Edit Upload Modal */}
+      {selectedBook && (
+        <DocxEditUploadModal
+          isOpen={showDocxModal}
+          onClose={() => setShowDocxModal(false)}
+          book={selectedBook}
+          onSuccess={() => refetch()}
+        />
+      )}
     </div>
   );
 };
+
 
 export default TextReviewPage;

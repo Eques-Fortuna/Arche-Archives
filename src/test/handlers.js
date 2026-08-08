@@ -238,6 +238,79 @@ export const handlers = [
 
   http.delete('*/api/admin/books/:id', () => {
     return HttpResponse.json({ ok: true, message: 'Book deleted permanently.' });
+  }),
+
+  http.post('*/api/admin/books/:id/docx-edit/upload-url', ({ params }) => {
+    return HttpResponse.json({
+      upload_url: `/api/admin/books/${params.id}/docx-edit/upload-target`,
+      storage_path: 'docx_edits/edited_volume.docx'
+    });
+  }),
+
+  http.put('*/api/admin/books/:id/docx-edit/upload-target', () => {
+    return new HttpResponse(null, { status: 200 });
+  }),
+
+
+  http.post('*/api/admin/books/:id/docx-edit/import', async ({ request }) => {
+    const body = await request.json().catch(() => ({}));
+    if (body.simulate_409 && !body.confirm) {
+      return HttpResponse.json(
+        {
+          ok: false,
+          rejected: 'too_many_deletions (63% removed)',
+          change_report: {
+            kept: 500,
+            text_changed: 100,
+            added: 10,
+            deleted: 1000,
+            reordered: 0,
+            total_before: 1600,
+            total_after: 610
+          },
+          hint: 'Re-submit with confirm=true if intentional'
+        },
+        { status: 409 }
+      );
+    }
+
+    if (body.confirm) {
+      return HttpResponse.json({
+        ok: true,
+        message: 'Confirmed large DOCX edit import forced.',
+        change_report: {
+          kept: 500,
+          text_changed: 100,
+          added: 10,
+          deleted: 1000,
+          reordered: 0,
+          total_before: 1600,
+          total_after: 610
+        }
+      });
+    }
+
+    return HttpResponse.json({
+      ok: true,
+      message: 'DOCX edit import started. The book will return to the render queue shortly.',
+      change_report: {
+        kept: 1549,
+        text_changed: 3,
+        added: 2,
+        deleted: 1,
+        reordered: 0,
+        total_before: 1661,
+        total_after: 1662
+      },
+      warnings: []
+    });
+  }),
+
+
+  http.put('*', () => {
+    return new HttpResponse(null, { status: 200 });
   })
 ];
+
+
 
